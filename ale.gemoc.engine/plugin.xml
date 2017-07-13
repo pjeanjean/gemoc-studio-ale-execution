@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+<extension
+         point="org.eclipse.debug.core.launchConfigurationTypes">
+      <launchConfigurationType
+            delegate="ale.gemoc.engine.ui.launcher.Launcher"
+            id="ale.gemoc.engine.ui.launcher"
+            modes="run, debug"
+            name="ALE Launcher">
+      </launchConfigurationType>
+   </extension>
+      <extension
+         point="org.eclipse.debug.ui.launchConfigurationTabGroups">
+      <launchConfigurationTabGroup
+            class="ale.gemoc.engine.ui.launcher.tabs.LauncherTabGroup"
+            id="ale.gemoc.engine.ui.launcher.tabGroup"
+            type="ale.gemoc.engine.ui.launcher">
+      </launchConfigurationTabGroup>
+   </extension>
+      <extension
+         point="org.eclipse.debug.ui.launchConfigurationTypeImages">
+      <launchConfigurationTypeImage
+            configTypeID="ale.gemoc.engine.ui.launcher"
+            icon="icons/ale-16.gif"
+            id="ale.gemoc.engine.ui.launcher.launchConfigurationTypeImage">
+      </launchConfigurationTypeImage>
+   </extension>
+</plugin>
