@@ -3,6 +3,7 @@ package ale.gemoc.engine;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.acceleo.query.runtime.IService;
 import org.eclipse.emf.ecore.EObject;
@@ -18,13 +19,24 @@ import org.eclipse.gemoc.executionframework.engine.core.AbstractSequentialExecut
 import org.eclipse.gemoc.xdsmlframework.api.core.IExecutionContext;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreterWithDiagnostic.IEvaluationResult;
 
+import com.google.common.collect.Lists;
+
 import ale.gemoc.engine.ui.RunConfiguration;
 
 //TODO: add ALEInterpreter listener for @step
 public class AleEngine extends AbstractSequentialExecutionEngine {
 
-	String dslFile = "";
+	/**
+	 * Root of the model
+	 */
 	EObject caller;
+	
+	/**
+	 * The semantic from .ale files
+	 */
+	List<ParseResult<ModelUnit>> parsedSemantics;
+	
+	ALEInterpreter interpreter;
 	
 	@Override
 	public String engineKindName() {
@@ -36,18 +48,12 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 		// TODO run selected @main
 		System.out.println("DEBUG:execEntryPoint");
 		
-		try {
-			System.out.println(dslFile);
-			System.out.println(caller);
-			Dsl environment = new WorkbenchDsl(dslFile);
-			ALEInterpreter interpreter = new ALEInterpreter();
-			List<ParseResult<ModelUnit>> parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment(),caller.eResource().getResourceSet())).parse(environment);
-			
+		if(interpreter != null && parsedSemantics != null) {
 			interpreter.addListener(new ServiceCallListener() {
 				
 				@Override
 				public void preCall(IService service, Object[] arguments) {
-					if(arguments[0] instanceof EObject) {
+					if (arguments[0] instanceof EObject) {
 						EObject currentCaller = (EObject) arguments[0];
 						String className = currentCaller.eClass().getName();
 						String methodName = service.getName();
@@ -57,16 +63,13 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 				
 				@Override
 				public void postCall(IService service, Object[] arguments, Object result) {
-//					afterExecutionStep();
+					// afterExecutionStep();
 				}
 			});
 			
 			IEvaluationResult res = interpreter.eval(caller, Arrays.asList(), parsedSemantics);
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		}
-		
+
 	}
 
 	@Override
@@ -96,7 +99,32 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 			caller = inputModel.getEObject(rootPath);
 			
 			// dslFile
-			dslFile = runConf.getDslFile();
+			String dslFile = runConf.getDslFile();
+			
+			try {
+				Dsl environment = new WorkbenchDsl(dslFile);
+				interpreter = new ALEInterpreter();
+				parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment(),
+						caller.eResource().getResourceSet())).parse(environment);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
 		}
+	}
+	
+	public List<ModelUnit> getModelUnits() {
+		if(parsedSemantics != null) {
+			return 
+				parsedSemantics
+				.stream()
+				.map(p -> p.getRoot())
+				.filter(elem -> elem != null)
+				.collect(Collectors.toList());
+		}
+		return Lists.newArrayList();
+	}
+	
+	public ALEInterpreter getInterpreter() {
+		return interpreter;
 	}
 }

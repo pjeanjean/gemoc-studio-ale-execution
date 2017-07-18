@@ -28,6 +28,7 @@ import org.eclipse.gemoc.xdsmlframework.api.core.ExecutionMode;
 import org.eclipse.gemoc.xdsmlframework.api.core.IExecutionEngine;
 
 import ale.gemoc.engine.AleEngine;
+import ale.gemoc.engine.debug.MutableFieldExtractor;
 import ale.gemoc.engine.ui.Activator;
 
 public class Launcher extends AbstractSequentialGemocLauncher {
@@ -83,8 +84,8 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 		AbstractGemocDebugger debugger = new GenericSequentialModelDebugger(dispatcher, _executionEngine);
 		Set<IMultiDimensionalTraceAddon> traceAddons = _executionEngine.getAddonsTypedBy(IMultiDimensionalTraceAddon.class);
 			
-		//TODO: check for @aspect on fields in the loaded model
-		debugger.setMutableFieldExtractors(Arrays.asList(new AnnotationMutableFieldExtractor()));
+		AleEngine engine = (AleEngine) _executionEngine;
+		debugger.setMutableFieldExtractors(Arrays.asList(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits())));
 		
 		// If in the launch configuration it is asked to pause at the start,
 		// we add this dummy break
