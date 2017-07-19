@@ -44,25 +44,27 @@ public class MutableFieldExtractor implements IMutableFieldExtractor{
 		/*
 		 * Retrieve dynamic feature from ALE interpreter internal
 		 */
-		for(EStructuralFeature feature : runtimePart.getEStructuralFeatures()) {
-			
-			Supplier<Object> getter = () -> {
-				DynamicFeatureRegistry registry = interpreter.getCurrentEngine().getEvalEnvironment().getFeatureAccess();
-				return registry.aqlFeatureAccess(eObject, feature.getName());
-			};
-			
-			Consumer<Object> setter = newValue -> {
-				DynamicFeatureRegistry registry = interpreter.getCurrentEngine().getEvalEnvironment().getFeatureAccess();
-				registry.setDynamicFeatureValue(eObject, feature.getName(), newValue);
-			};
-			
-			MutableField field = new MutableField(
-					feature.getName()+" ("+getName(eObject)+ " :"+eObject.eClass().getName() +")",
-					eObject,
-					getter,
-					setter
-					);
-			result.add(field);
+		if(runtimePart != null) {
+			for(EStructuralFeature feature : runtimePart.getEStructuralFeatures()) {
+				
+				Supplier<Object> getter = () -> {
+					DynamicFeatureRegistry registry = interpreter.getCurrentEngine().getEvalEnvironment().getFeatureAccess();
+					return registry.aqlFeatureAccess(eObject, feature.getName());
+				};
+				
+				Consumer<Object> setter = newValue -> {
+					DynamicFeatureRegistry registry = interpreter.getCurrentEngine().getEvalEnvironment().getFeatureAccess();
+					registry.setDynamicFeatureValue(eObject, feature.getName(), newValue);
+				};
+				
+				MutableField field = new MutableField(
+						feature.getName()+" ("+getName(eObject)+ " :"+eObject.eClass().getName() +")",
+						eObject,
+						getter,
+						setter
+						);
+				result.add(field);
+			}
 		}
 		
 		return result;
