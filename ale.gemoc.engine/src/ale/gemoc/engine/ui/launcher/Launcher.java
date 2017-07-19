@@ -8,6 +8,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gemoc.commons.eclipse.messagingsystem.api.MessagingSystem;
 import org.eclipse.gemoc.commons.eclipse.ui.ViewHelper;
@@ -21,14 +22,21 @@ import org.eclipse.gemoc.executionframework.engine.commons.EngineContextExceptio
 import org.eclipse.gemoc.executionframework.engine.commons.ModelExecutionContext;
 import org.eclipse.gemoc.executionframework.engine.ui.commons.RunConfiguration;
 import org.eclipse.gemoc.executionframework.engine.ui.launcher.AbstractSequentialGemocLauncher;
+import org.eclipse.gemoc.executionframework.extensions.sirius.debug.DebugSessionFactory;
 import org.eclipse.gemoc.executionframework.ui.views.engine.EnginesStatusView;
 import org.eclipse.gemoc.trace.commons.model.trace.MSEOccurrence;
 import org.eclipse.gemoc.trace.gemoc.api.IMultiDimensionalTraceAddon;
 import org.eclipse.gemoc.xdsmlframework.api.core.ExecutionMode;
 import org.eclipse.gemoc.xdsmlframework.api.core.IExecutionEngine;
+import org.eclipse.sirius.business.api.session.Session;
+import org.eclipse.sirius.business.api.session.SessionManager;
+import org.eclipse.sirius.common.tools.api.interpreter.CompoundInterpreter;
+import org.eclipse.sirius.common.tools.api.interpreter.IInterpreter;
+import org.eclipse.sirius.common.tools.api.interpreter.IInterpreterProvider;
 
 import ale.gemoc.engine.AleEngine;
 import ale.gemoc.engine.debug.MutableFieldExtractor;
+import ale.gemoc.engine.sirius.ALEInterpreterProvider;
 import ale.gemoc.engine.ui.Activator;
 
 public class Launcher extends AbstractSequentialGemocLauncher {
@@ -41,10 +49,14 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 		
 		AleEngine engine = new AleEngine();
 		
+		IInterpreterProvider provider = new ALEInterpreterProvider(engine);
+		CompoundInterpreter.INSTANCE.registerProvider(provider);
+		
 		ModelExecutionContext executioncontext = new SequentialModelExecutionContext(runConfiguration, executionMode);
 		executioncontext.initializeResourceModel(); // load model
 		engine.initialize(executioncontext);
 		
+		//TODO: CompoundInterpreter.INSTANCE.removeInterpreter(provider);
 		return engine;
 	}
 
@@ -120,5 +132,5 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 	public String getModelIdentifier() {
 		return MODEL_ID;
 	}
-
+	
 }

@@ -30,4 +30,8 @@ Require-Bundle: org.eclipse.gemoc.executionframework.engine,
  org.eclipse.xtext,
  org.eclipse.gemoc.execution.sequential.javaxdsml.api,
  fr.inria.diverse.melange.metamodel,
- org.eclipse.emf.transaction
+ org.eclipse.emf.transaction,
+ org.eclipse.sirius,
+ org.eclipse.sirius.common.acceleo.aql,
+ org.eclipse.sirius.ecore.extender,
+ org.eclipse.gemoc.executionframework.extensions.sirius
