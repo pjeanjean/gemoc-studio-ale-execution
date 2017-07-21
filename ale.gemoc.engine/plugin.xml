@@ -26,4 +26,10 @@
             id="ale.gemoc.engine.ui.launcher.launchConfigurationTypeImage">
       </launchConfigurationTypeImage>
    </extension>
+   <extension
+         point="org.eclipse.gemoc.opsemanticsview.gen">
+      <org.eclipse.gemoc.opsemanticsview.gen
+            class="ale.gemoc.engine.trace.ALEOperationalSemanticsViewGenerator">
+      </org.eclipse.gemoc.opsemanticsview.gen>
+   </extension>
 </plugin>

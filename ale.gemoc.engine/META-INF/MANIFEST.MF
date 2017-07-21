@@ -34,4 +34,7 @@ Require-Bundle: org.eclipse.gemoc.executionframework.engine,
  org.eclipse.sirius,
  org.eclipse.sirius.common.acceleo.aql,
  org.eclipse.sirius.ecore.extender,
- org.eclipse.gemoc.executionframework.extensions.sirius
+ org.eclipse.gemoc.executionframework.extensions.sirius,
+ org.eclipse.gemoc.opsemanticsview.gen,
+ org.eclipse.gemoc.opsemanticsview.model,
+ org.eclipse.emf.ecore
