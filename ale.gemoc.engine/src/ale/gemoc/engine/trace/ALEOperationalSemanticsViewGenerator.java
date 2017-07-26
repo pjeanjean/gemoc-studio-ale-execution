@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import org.eclipse.acceleo.query.ast.Call;
 import org.eclipse.acceleo.query.ast.Expression;
+import org.eclipse.acceleo.query.parser.AstValidator;
+import org.eclipse.acceleo.query.runtime.impl.ValidationServices;
 import org.eclipse.acceleo.query.validation.type.EClassifierType;
 import org.eclipse.acceleo.query.validation.type.IType;
 import org.eclipse.core.resources.IProject;
@@ -225,10 +227,10 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 							call.getServiceName().equals(mtd.getOperationRef().getName()) &&
 							mtd.getOperationRef().getEParameters().size() == call.getArguments().size() - 1 &&
 							types.stream().anyMatch(type -> callerType.isAssignableFrom(type));
-					if(candidate == null) {
+					if(candidate == null && isMatching) {
 						candidate = mtd;
 					}
-					else if(getContainingClass(candidate).isSuperTypeOf(getContainingClass(mtd))){
+					else if(isMatching && getContainingClass(candidate).isSuperTypeOf(getContainingClass(mtd))){
 						candidate = mtd;
 					}
 				}
