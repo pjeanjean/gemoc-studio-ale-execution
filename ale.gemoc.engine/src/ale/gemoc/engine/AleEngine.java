@@ -9,6 +9,7 @@ import org.eclipse.acceleo.query.runtime.IService;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecoretools.ale.ALEInterpreter;
+import org.eclipse.emf.ecoretools.ale.core.interpreter.services.EvalBodyService;
 import org.eclipse.emf.ecoretools.ale.core.interpreter.services.ServiceCallListener;
 import org.eclipse.emf.ecoretools.ale.core.parser.Dsl;
 import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
@@ -53,17 +54,27 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 				
 				@Override
 				public void preCall(IService service, Object[] arguments) {
-					if (arguments[0] instanceof EObject) {
-						EObject currentCaller = (EObject) arguments[0];
-						String className = currentCaller.eClass().getName();
-						String methodName = service.getName();
-						beforeExecutionStep(caller, className, methodName);
+					if(service instanceof EvalBodyService) {
+						boolean isStep = ((EvalBodyService)service).getImplem().getTags().contains("step");
+						if(isStep) {
+							if (arguments[0] instanceof EObject) {
+								EObject currentCaller = (EObject) arguments[0];
+								String className = currentCaller.eClass().getName();
+								String methodName = service.getName();
+								beforeExecutionStep(caller, className, methodName);
+							}
+						}
 					}
 				}
 				
 				@Override
 				public void postCall(IService service, Object[] arguments, Object result) {
-					// afterExecutionStep();
+					if(service instanceof EvalBodyService) {
+						boolean isStep = ((EvalBodyService)service).getImplem().getTags().contains("step");
+						if(isStep) {
+							afterExecutionStep();
+						}
+					}
 				}
 			});
 			
