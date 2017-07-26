@@ -1,13 +1,19 @@
 package ale.gemoc.engine.trace;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.eclipse.acceleo.query.ast.Call;
+import org.eclipse.acceleo.query.ast.Expression;
+import org.eclipse.acceleo.query.validation.type.EClassifierType;
+import org.eclipse.acceleo.query.validation.type.IType;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
@@ -17,10 +23,8 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecoretools.ale.ALEInterpreter;
-import org.eclipse.emf.ecoretools.ale.core.parser.Dsl;
-import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
 import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
-import org.eclipse.emf.ecoretools.ale.ide.WorkbenchDsl;
+import org.eclipse.emf.ecoretools.ale.core.validation.BaseValidator;
 import org.eclipse.emf.ecoretools.ale.ide.resource.AleResourceFactory;
 import org.eclipse.emf.ecoretools.ale.implementation.BehavioredClass;
 import org.eclipse.emf.ecoretools.ale.implementation.ExtendedClass;
@@ -39,6 +43,8 @@ import opsemanticsview.Rule;
 public class ALEOperationalSemanticsViewGenerator implements OperationalSemanticsViewGenerator {
 
 	Map<Method,Rule> methodToRule = new HashMap<>();
+	BaseValidator aleValidator;
+	List<Method> allMethods;
 
 	@Override
 	public boolean canHandle(Language language, IProject melangeProject) {
@@ -64,7 +70,7 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 		result.setAbstractSyntax(null);
 		
 		List<ModelUnit> units = loadModelUnits(language.getAle(),rs);
-		List<Method> allMethods = getAllMethod(units);
+		allMethods = getAllMethod(units);
 		
 		findDynamicParts(units, result);		
 		allMethods.forEach(mtd -> inspectForBigStep(mtd, result));
@@ -79,8 +85,9 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 			.getExtensionToFactoryMap()
 			.put("dsl", new AleResourceFactory(interpreter.getQueryEnvironment(),rs));
 		
-		Resource dslResource = rs.createResource(URI.createURI(dslFile));
-		return 
+		
+		Resource dslResource = rs.getResource(URI.createURI(dslFile),true);
+		List<ModelUnit> res = 
 			dslResource
 			.getContents()
 			.stream()
@@ -88,6 +95,16 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 			.map(o -> (ModelUnit) o)
 			.collect(Collectors.toList());
 		
+		aleValidator = new BaseValidator(interpreter.getQueryEnvironment(), Arrays.asList());
+		List<ParseResult<ModelUnit>> validationInput = new ArrayList<>();
+		for(ModelUnit unit : res) {
+			ParseResult<ModelUnit> mockParseRes = new ParseResult<ModelUnit>();
+			mockParseRes.setRoot(unit);
+			validationInput.add(mockParseRes);
+		}
+		aleValidator.validate(validationInput);
+		
+		return res;
 //		List<ParseResult<ModelUnit>> parsedSemantics = null;
 //		try {
 //			Dsl environment = new WorkbenchDsl(dslFile);
@@ -120,7 +137,9 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 					xtdCls.eResource().getContents().add(clsFragment);
 				}
 				
-				for (EStructuralFeature feature : clsFragment.getEStructuralFeatures()) {
+				List<EStructuralFeature> movedFeature = Lists.newArrayList(clsFragment.getEStructuralFeatures());
+				for (EStructuralFeature feature : movedFeature) {
+					xtdCls.getBaseClass().getEStructuralFeatures().add(feature); //FIXME: dirty hack
 					view.getDynamicProperties().add(feature);
 				}
 			}
@@ -189,12 +208,55 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 	private List<Method> findCalledMethods(Method method) {
 		List<Method> calledMethods = new ArrayList<>();
 		// TODO Auto-generated method stub
+		
+		TreeIterator<Object> allBodyContent = EcoreUtil.getAllContents(method.getBody(), true);
+		allBodyContent.forEachRemaining(elem -> {
+			if(elem instanceof Call) {
+				Call call = (Call) elem;
+				Expression caller = call.getArguments().get(0);
+				Set<IType> types = aleValidator.getPossibleTypes(caller);
+				
+				//search for the best method
+				Method candidate = null;
+				for(Method mtd : allMethods) {
+					EClass cls = getContainingClass(mtd);
+					EClassifierType callerType = new EClassifierType(aleValidator.getQryEnv(),cls);  
+					boolean isMatching = 
+							call.getServiceName().equals(mtd.getOperationRef().getName()) &&
+							mtd.getOperationRef().getEParameters().size() == call.getArguments().size() - 1 &&
+							types.stream().anyMatch(type -> callerType.isAssignableFrom(type));
+					if(candidate == null) {
+						candidate = mtd;
+					}
+					else if(getContainingClass(candidate).isSuperTypeOf(getContainingClass(mtd))){
+						candidate = mtd;
+					}
+				}
+				if(candidate != null) {
+					calledMethods.add(candidate);
+				}
+			}
+		});
+		
 		return calledMethods;
 	}
 
 	private List<Method> findOverridedMethods(Method method) {
 		List<Method> overridedMethods = new ArrayList<>();
-		//TODO
+		
+		for(Method mtd : allMethods) {
+			EClass methodClass = getContainingClass(method);
+			EClass mtdClass = getContainingClass(mtd);
+			boolean isMatching = 
+					method != mtd &&
+					method.getOperationRef().getName().equals(mtd.getOperationRef().getName()) &&
+					method.getOperationRef().getEParameters().size() == mtd.getOperationRef().getEParameters().size() &&
+					methodClass.isSuperTypeOf(mtdClass);
+			if(isMatching) {
+				overridedMethods.add(mtd);
+			}
+		}
+		
 		return overridedMethods;
 	}
 	
@@ -213,5 +275,14 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 				.collect(Collectors.toList())
 				);
 		return allMethods;
+	}
+	
+	private EClass getContainingClass(Method mtd) {
+		if(mtd.eContainer() instanceof ExtendedClass) {
+			return ((ExtendedClass)mtd.eContainer()).getBaseClass();
+		}
+		else {
+			return mtd.getOperationRef().getEContainingClass();
+		}
 	}
 }
