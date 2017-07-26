@@ -60,6 +60,7 @@ public class MutableFieldExtractor implements IMutableFieldExtractor{
 				MutableField field = new MutableField(
 						feature.getName()+" ("+getName(eObject)+ " :"+eObject.eClass().getName() +")",
 						eObject,
+						feature,
 						getter,
 						setter
 						);

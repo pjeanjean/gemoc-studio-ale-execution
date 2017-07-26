@@ -16,6 +16,7 @@ import org.eclipse.gemoc.dsl.debug.ide.IDSLDebugger;
 import org.eclipse.gemoc.dsl.debug.ide.event.DSLDebugEventDispatcher;
 import org.eclipse.gemoc.execution.sequential.javaengine.SequentialModelExecutionContext;
 import org.eclipse.gemoc.execution.sequential.javaengine.ui.debug.GenericSequentialModelDebugger;
+import org.eclipse.gemoc.execution.sequential.javaengine.ui.debug.OmniscientGenericSequentialModelDebugger;
 import org.eclipse.gemoc.executionframework.debugger.AbstractGemocDebugger;
 import org.eclipse.gemoc.executionframework.debugger.AnnotationMutableFieldExtractor;
 import org.eclipse.gemoc.executionframework.engine.commons.EngineContextException;
@@ -25,6 +26,7 @@ import org.eclipse.gemoc.executionframework.engine.ui.launcher.AbstractSequentia
 import org.eclipse.gemoc.executionframework.extensions.sirius.debug.DebugSessionFactory;
 import org.eclipse.gemoc.executionframework.ui.views.engine.EnginesStatusView;
 import org.eclipse.gemoc.trace.commons.model.trace.MSEOccurrence;
+import org.eclipse.gemoc.trace.gemoc.api.IModelAccessor;
 import org.eclipse.gemoc.trace.gemoc.api.IMultiDimensionalTraceAddon;
 import org.eclipse.gemoc.xdsmlframework.api.core.ExecutionMode;
 import org.eclipse.gemoc.xdsmlframework.api.core.IExecutionEngine;
@@ -50,7 +52,7 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 		AleEngine engine = new AleEngine();
 		
 		IInterpreterProvider provider = new ALEInterpreterProvider(engine);
-		CompoundInterpreter.INSTANCE.registerProvider(provider);
+		CompoundInterpreter.INSTANCE.registerProvider(provider); //Register ALE for Sirius
 		
 		ModelExecutionContext executioncontext = new SequentialModelExecutionContext(runConfiguration, executionMode);
 		executioncontext.initializeResourceModel(); // load model
@@ -93,10 +95,23 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 	@Override
 	protected IDSLDebugger getDebugger(ILaunchConfiguration configuration, DSLDebugEventDispatcher dispatcher,
 			EObject firstInstruction, IProgressMonitor monitor) {
-		AbstractGemocDebugger debugger = new GenericSequentialModelDebugger(dispatcher, _executionEngine);
-		Set<IMultiDimensionalTraceAddon> traceAddons = _executionEngine.getAddonsTypedBy(IMultiDimensionalTraceAddon.class);
-			
+		
 		AleEngine engine = (AleEngine) _executionEngine;
+		
+		Set<IMultiDimensionalTraceAddon> traceAddons = _executionEngine.getAddonsTypedBy(IMultiDimensionalTraceAddon.class);
+		for(IMultiDimensionalTraceAddon addon : traceAddons) {
+			if(addon instanceof IModelAccessor) {
+				((IModelAccessor)addon).setIMutableFieldExtractor(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits()));
+			}
+		}
+		
+		AbstractGemocDebugger debugger;
+		if (traceAddons.isEmpty()) {
+			debugger = new GenericSequentialModelDebugger(dispatcher, _executionEngine);
+		} else {
+			debugger = new OmniscientGenericSequentialModelDebugger(dispatcher, _executionEngine);
+		}
+		
 		debugger.setMutableFieldExtractors(Arrays.asList(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits())));
 		
 		// If in the launch configuration it is asked to pause at the start,
