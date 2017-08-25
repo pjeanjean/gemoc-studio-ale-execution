@@ -37,6 +37,8 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 	 */
 	List<ParseResult<ModelUnit>> parsedSemantics;
 	
+	String args;
+	
 	ALEInterpreter interpreter;
 	
 	@Override
@@ -78,7 +80,7 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 				}
 			});
 			
-			IEvaluationResult res = interpreter.eval(caller, Arrays.asList(), parsedSemantics);
+			IEvaluationResult res = interpreter.eval(caller, Arrays.asList(args), parsedSemantics);
 		}
 
 	}
@@ -111,6 +113,9 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 			
 			// dslFile
 			String dslFile = runConf.getDslFile();
+
+			// arguments
+			args = runConf.getModelInitializationArguments();
 			
 			try {
 				Dsl environment = new WorkbenchDsl(dslFile);
