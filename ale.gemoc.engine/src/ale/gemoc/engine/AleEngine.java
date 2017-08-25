@@ -61,7 +61,7 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 								EObject currentCaller = (EObject) arguments[0];
 								String className = currentCaller.eClass().getName();
 								String methodName = service.getName();
-								beforeExecutionStep(caller, className, methodName);
+								beforeExecutionStep(currentCaller, className, methodName);
 							}
 						}
 					}
