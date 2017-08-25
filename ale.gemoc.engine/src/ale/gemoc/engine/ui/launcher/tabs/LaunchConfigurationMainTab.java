@@ -474,16 +474,18 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 		
 		SequentialLanguageDefinitionExtension languageDefinition = SequentialLanguageDefinitionExtensionPoint
 				.findDefinition(_languageCombo.getText());
-		String melangePath = languageDefinition.getXDSMLFilePath();
-		Resource res = loadModel(URI.createPlatformPluginURI(melangePath,true));
-		ModelTypingSpace modelTypingSpace = (ModelTypingSpace) res.getContents().get(0);
-		String languageFQN = languageDefinition.getName();
-		for (Element element : modelTypingSpace.getElements()) {
-			if (element instanceof Language) {
-				Language language = (Language) element;
-				if (languageFQN.endsWith(language.getName())) {
-					dslFilePath = language.getAle();
-					break;
+		if(languageDefinition != null) {
+			String melangePath = languageDefinition.getXDSMLFilePath();
+			Resource res = loadModel(URI.createPlatformPluginURI(melangePath,true));
+			ModelTypingSpace modelTypingSpace = (ModelTypingSpace) res.getContents().get(0);
+			String languageFQN = languageDefinition.getName();
+			for (Element element : modelTypingSpace.getElements()) {
+				if (element instanceof Language) {
+					Language language = (Language) element;
+					if (languageFQN.endsWith(language.getName())) {
+						dslFilePath = language.getAle();
+						break;
+					}
 				}
 			}
 		}
