@@ -3,6 +3,7 @@ package ale.gemoc.engine.ui.launcher;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -50,6 +51,15 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 			throws CoreException, EngineContextException {
 		
 		AleEngine engine = new AleEngine();
+		
+		Set<IInterpreterProvider> aleProviders = 
+				CompoundInterpreter
+				.INSTANCE
+				.getProviders()
+				.stream()
+				.filter(p -> p instanceof ALEInterpreterProvider)
+				.collect(Collectors.toSet());
+		aleProviders.forEach(p -> CompoundInterpreter.INSTANCE.removeInterpreter(p));
 		
 		IInterpreterProvider provider = new ALEInterpreterProvider(engine);
 		CompoundInterpreter.INSTANCE.registerProvider(provider); //Register ALE for Sirius
