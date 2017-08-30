@@ -1,12 +1,18 @@
 package ale.gemoc.engine.ui.launcher.tabs;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
@@ -15,6 +21,13 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecoretools.ale.ALEInterpreter;
+import org.eclipse.emf.ecoretools.ale.core.parser.Dsl;
+import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
+import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
+import org.eclipse.emf.ecoretools.ale.ide.WorkbenchDsl;
+import org.eclipse.emf.ecoretools.ale.implementation.Method;
+import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
 import org.eclipse.gemoc.commons.eclipse.emf.URIHelper;
 import org.eclipse.gemoc.commons.eclipse.ui.dialogs.SelectAnyIFileDialog;
 import org.eclipse.gemoc.dsl.debug.ide.launch.AbstractDSLLaunchConfigurationDelegate;
@@ -46,7 +59,11 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.naming.DefaultDeclarativeQualifiedNameProvider;
 import org.eclipse.xtext.naming.QualifiedName;
 
+import com.google.common.collect.Lists;
+
+import ale.gemoc.engine.ui.MethodLabelProvider;
 import ale.gemoc.engine.ui.RunConfiguration;
+import ale.gemoc.engine.ui.SelectMainMethodDialog;
 import fr.inria.diverse.melange.metamodel.melange.Element;
 import fr.inria.diverse.melange.metamodel.melange.Language;
 import fr.inria.diverse.melange.metamodel.melange.ModelTypingSpace;
@@ -127,8 +144,10 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 					.getModelEntryPoint());
 			_languageCombo.setText(runConfiguration
 					.getLanguageName());
+			_modelInitializationMethodText.setText(runConfiguration.getModelInitializationMethod());
 			_modelInitializationArgumentsText.setText(runConfiguration.getModelInitializationArguments());
 			_entryPointModelElementLabel.setText("");
+			_entryPointMethodText.setText(runConfiguration.getExecutionEntryPoint());
 			updateMainElementName();
 		} catch (CoreException e) {
 			Activator.error(e.getMessage(), e);
@@ -160,7 +179,7 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 		// DebugModelID for sequential engine
 		configuration.setAttribute(RunConfiguration.DEBUG_MODEL_ID, Activator.DEBUG_MODEL_ID);
 		
-		configuration.setAttribute(RunConfiguration.ALE_DSL_FILE, getDslFilePath());
+		configuration.setAttribute(RunConfiguration.ALE_DSL_FILE, getDslFilePath(_languageCombo.getText()));
 	}
 
 	@Override
@@ -227,7 +246,7 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 		GridData gridData = new GridData(GridData.FILL_BOTH);
 		gridData.heightHint = 40;
 		_modelInitializationArgumentsText.setLayoutData(gridData);
-		//_modelInitializationArgumentsText.setLayoutData(createStandardLayout());
+		_modelInitializationArgumentsText.setLayoutData(createStandardLayout());
 		_modelInitializationArgumentsText.setFont(font);
 		_modelInitializationArgumentsText.setEditable(true);
 		_modelInitializationArgumentsText.addModifyListener(new ModifyListener() {
@@ -247,26 +266,16 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 		_languageCombo = new Combo(parent, SWT.NONE);
 		_languageCombo.setLayoutData(createStandardLayout());
 
-		List<String> languagesNames = MelangeHelper.getAllLanguages();
+		List<String> languagesNames = getAllLanguages();
 		String[] empty = {};
 		_languageCombo.setItems(languagesNames.toArray(empty));
-//		_languageCombo.setItems(new String[] {"Dummy"});
 		_languageCombo.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				//String selection = _languageCombo.getText();
-				//List<String> modelTypeNames = MelangeHelper.getModelTypes(selection);
 				updateLaunchConfigurationDialog();
 			}
 		});
 		createTextLabelLayout(parent, "");
-
-//		createTextLabelLayout(parent, "Melange resource adapter query");
-//		_melangeQueryText = new Text(parent, SWT.SINGLE | SWT.BORDER);
-//		_melangeQueryText.setLayoutData(createStandardLayout());
-//		_melangeQueryText.setFont(font);
-//		_melangeQueryText.setEditable(false);
-//		createTextLabelLayout(parent, "");
 		
 		return parent;
 	}
@@ -336,12 +345,21 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 		_entryPointMethodText.addModifyListener(fBasicModifyListener);
 		Button mainMethodBrowseButton = createPushButton(parent, "Browse", null);
 		mainMethodBrowseButton.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(SelectionEvent event) {
 				if(_languageCombo.getText() == null){
 					setErrorMessage("Please select a language.");
 				}
 				else{
-					//TODO: ask Melange?
+						String dslFile = getDslFilePath(_languageCombo.getText());
+						MethodLabelProvider labelProvider = new MethodLabelProvider();
+						SelectMainMethodDialog dialog = new SelectMainMethodDialog(
+								dslFile, null, labelProvider);
+						int res = dialog.open();
+						if (res == WizardDialog.OK) {
+							Method selection = (Method) dialog.getFirstResult();
+							_entryPointMethodText.setText(labelProvider.getText(selection));
+						}
+					
 				}
 			}
 		});
@@ -371,8 +389,16 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 							model.getResourceSet(),
 							new ENamedElementQualifiedNameLabelProvider()){
 						protected boolean select(EObject obj) {
-							//TODO: filter based on @main
-							return true;
+							String methodSignature = _entryPointMethodText.getText();
+							List<String> segments = Lists.newArrayList(methodSignature.split("::"));
+							if(segments.size() >= 2 ) {
+								String callerTypeName = segments.get(segments.size() - 2);
+								if(obj.eClass().getName().equals(callerTypeName)){
+									return true;
+								}
+							}
+							
+							return false;
 						}
 					};
 					int res = dialog.open();
@@ -464,32 +490,68 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 	}
 	
 	protected String getModelInitializationMethodName(){
-		//TODO: ask Melange?
-		return "";
-	}
-	
-	private String getDslFilePath() {
-		
-		String dslFilePath = "";
-		
-		SequentialLanguageDefinitionExtension languageDefinition = SequentialLanguageDefinitionExtensionPoint
-				.findDefinition(_languageCombo.getText());
-		if(languageDefinition != null) {
-			String melangePath = languageDefinition.getXDSMLFilePath();
-			Resource res = loadModel(URI.createPlatformPluginURI(melangePath,true));
-			ModelTypingSpace modelTypingSpace = (ModelTypingSpace) res.getContents().get(0);
-			String languageFQN = languageDefinition.getName();
-			for (Element element : modelTypingSpace.getElements()) {
-				if (element instanceof Language) {
-					Language language = (Language) element;
-					if (languageFQN.endsWith(language.getName())) {
-						dslFilePath = language.getAle();
-						break;
+		if(_languageCombo.getText() != null && _entryPointMethodText.getText() != null){
+			
+			List<String> segments = Arrays.asList(_entryPointMethodText.getText().split("::"));
+			if(segments.size() >= 2) {
+				String tagetClassName = segments.get(segments.size() - 2);
+				try {
+					Dsl environment = new WorkbenchDsl(getDslFilePath(_languageCombo.getText()));
+					ALEInterpreter interpreter = new ALEInterpreter();
+					List<ParseResult<ModelUnit>> parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment())).parse(environment);
+					Optional<Method> initOperation =
+						parsedSemantics
+						.stream()
+						.filter(sem -> sem.getRoot() != null)
+						.map(sem -> sem.getRoot())
+						.flatMap(unit -> unit.getClassExtensions().stream())
+						.filter(xtdCls -> xtdCls.getBaseClass().getName().equals(tagetClassName))
+						.flatMap(xtdCls -> xtdCls.getMethods().stream())
+						.filter(op -> op.getTags().contains("init"))
+						.findFirst();
+					
+					if(initOperation.isPresent()){
+						return (new MethodLabelProvider()).getText(initOperation.get());
 					}
+					
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
 				}
 			}
 		}
-		
-		return dslFilePath;
+		return "";
+	}
+	
+	private String getDslFilePath(String xdsmlName) {
+		List<String> languagesNames = new ArrayList<String>();
+		IConfigurationElement[] melangeLanguages = Platform
+				.getExtensionRegistry().getConfigurationElementsFor(
+						SequentialLanguageDefinitionExtensionPoint.GEMOC_SEQUENTIAL_LANGUAGE_EXTENSION_POINT);
+		for (IConfigurationElement lang : melangeLanguages) {
+			String xdsmlPath = lang.getAttribute("xdsmlFilePath");
+			String langName = lang.getAttribute("name");
+			if(langName.equals(xdsmlName) && xdsmlPath.endsWith(".dsl")) {
+				return xdsmlPath;
+			}
+		}
+		return "";
+	}
+	
+	/**
+	 * Collect all DSL paths declared in Language Extension Point
+	 */
+	public List<String> getAllLanguages(){
+		List<String> languagesNames = new ArrayList<String>();
+		IConfigurationElement[] melangeLanguages = Platform
+				.getExtensionRegistry().getConfigurationElementsFor(
+						SequentialLanguageDefinitionExtensionPoint.GEMOC_SEQUENTIAL_LANGUAGE_EXTENSION_POINT);
+		for (IConfigurationElement lang : melangeLanguages) {
+			String xdsmlPath = lang.getAttribute("xdsmlFilePath");
+			String xdsmlName = lang.getAttribute("name");
+			if(xdsmlPath.endsWith(".dsl")) {
+				languagesNames.add(xdsmlName);
+			}
+		}
+		return languagesNames;
 	}
 }
