@@ -17,14 +17,18 @@ import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
 import org.eclipse.emf.ecoretools.ale.ide.WorkbenchDsl;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
 import org.eclipse.gemoc.executionframework.engine.core.AbstractSequentialExecutionEngine;
+import org.eclipse.gemoc.executionframework.extensions.sirius.services.IModelAnimator;
+import org.eclipse.gemoc.trace.commons.model.trace.Step;
+import org.eclipse.gemoc.trace.gemoc.api.IMultiDimensionalTraceAddon;
+import org.eclipse.gemoc.trace.gemoc.api.ITraceViewListener;
 import org.eclipse.gemoc.xdsmlframework.api.core.IExecutionContext;
+import org.eclipse.gemoc.xdsmlframework.api.engine_addon.IEngineAddon;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreterWithDiagnostic.IEvaluationResult;
 
 import com.google.common.collect.Lists;
 
 import ale.gemoc.engine.ui.RunConfiguration;
 
-//TODO: add ALEInterpreter listener for @step
 public class AleEngine extends AbstractSequentialExecutionEngine {
 
 	/**
@@ -48,9 +52,6 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 
 	@Override
 	protected void executeEntryPoint() {
-		// TODO run selected @main
-		System.out.println("DEBUG:execEntryPoint");
-		
 		if(interpreter != null && parsedSemantics != null) {
 			interpreter.addListener(new ServiceCallListener() {
 				
@@ -80,7 +81,37 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 				}
 			});
 			
-			IEvaluationResult res = interpreter.eval(caller, Arrays.asList(args), parsedSemantics);
+			//Register animation updater
+			IMultiDimensionalTraceAddon traceCandidate = null;
+			List<IModelAnimator> animators = new ArrayList<>();
+			for (IEngineAddon addon : AleEngine.this.getExecutionContext().getExecutionPlatform().getEngineAddons()) {
+				if(addon instanceof IMultiDimensionalTraceAddon) {
+					traceCandidate = (IMultiDimensionalTraceAddon) addon;
+				}
+				else if(addon instanceof IModelAnimator) {
+					animators.add((IModelAnimator) addon);
+				}
+			}
+			
+			final IMultiDimensionalTraceAddon traceAddon = traceCandidate;
+			ITraceViewListener diagramUpdater = new ITraceViewListener() {
+				@Override
+				public void update() {
+					for (IModelAnimator addon : animators) {
+						try {
+							Step<?> nextStep = (Step<?>) traceAddon.getTraceExplorer().getCurrentState().getStartedSteps().get(0);
+							addon.activate(caller,nextStep);
+						} catch (Exception exception) {
+							// Update failed
+						}
+					}
+				}
+			};
+			traceAddon.getTraceExplorer().registerCommand(diagramUpdater, () -> diagramUpdater.update());
+			
+			IEvaluationResult res = interpreter.eval(caller, Arrays.asList(), parsedSemantics);
+			
+			traceAddon.getTraceExplorer().removeListener(diagramUpdater);
 		}
 
 	}
@@ -94,15 +125,11 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 
 	@Override
 	protected void prepareEntryPoint(IExecutionContext executionContext) {
-		System.out.println("DEBUG:prepareEntryPoint");
-		// TODO init ALE interpreter
 		
 	}
 
 	@Override
 	protected void prepareInitializeModel(IExecutionContext executionContext) {
-		System.out.println("DEBUG:prepareInitModel");
-		
 		if(executionContext.getRunConfiguration() instanceof RunConfiguration) {
 			RunConfiguration runConf = (RunConfiguration) executionContext.getRunConfiguration();
 			

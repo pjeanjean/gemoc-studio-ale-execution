@@ -155,7 +155,8 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 
 	@Override
 	public String getModelIdentifier() {
-		return MODEL_ID;
+		//FIXME: Should be retrieve by IExecutionContext.getRunConfiguration().getDebugModelID()
+		return "org.eclipse.gemoc.execution.sequential.javaengine.ui.debugModel";
 	}
 	
 }
