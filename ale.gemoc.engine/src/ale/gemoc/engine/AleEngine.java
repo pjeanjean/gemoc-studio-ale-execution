@@ -1,8 +1,10 @@
 package ale.gemoc.engine;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.eclipse.acceleo.query.runtime.IService;
@@ -15,6 +17,7 @@ import org.eclipse.emf.ecoretools.ale.core.parser.Dsl;
 import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
 import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
 import org.eclipse.emf.ecoretools.ale.ide.WorkbenchDsl;
+import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
 import org.eclipse.gemoc.executionframework.engine.core.AbstractSequentialExecutionEngine;
 import org.eclipse.gemoc.executionframework.extensions.sirius.services.IModelAnimator;
@@ -41,9 +44,13 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 	 */
 	List<ParseResult<ModelUnit>> parsedSemantics;
 	
-	String args;
+	List<Object> args;
 	
 	ALEInterpreter interpreter;
+
+	private String mainOp;
+
+	private String initOp;
 	
 	@Override
 	public String engineKindName() {
@@ -109,7 +116,13 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 			};
 			traceAddon.getTraceExplorer().registerCommand(diagramUpdater, () -> diagramUpdater.update());
 			
-			IEvaluationResult res = interpreter.eval(caller, Arrays.asList(), parsedSemantics);
+			Method entryPoint = getMainOp().orElse(null);
+			if(interpreter.getCurrentEngine() != null) { //We ran @init method
+				interpreter.getCurrentEngine().eval(caller, entryPoint, Arrays.asList());
+			}
+			else {
+				IEvaluationResult res = interpreter.eval(caller, entryPoint, Arrays.asList(), parsedSemantics);
+			}
 			
 			traceAddon.getTraceExplorer().removeListener(diagramUpdater);
 		}
@@ -118,9 +131,11 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 
 	@Override
 	protected void initializeModel() {
-		System.out.println("DEBUG:initModel");
-		// TODO run @init
+		Optional<Method> init = getInitOp();
 		
+		if(interpreter != null && parsedSemantics != null && init.isPresent()) {
+			IEvaluationResult res = interpreter.eval(caller, init.get(), args, parsedSemantics);
+		}
 	}
 
 	@Override
@@ -142,7 +157,10 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 			String dslFile = runConf.getDslFile();
 
 			// arguments
-			args = runConf.getModelInitializationArguments();
+			args = Lists.newArrayList(runConf.getModelInitializationArguments().split("\n"));
+			
+			mainOp = runConf.getExecutionEntryPoint();
+			initOp = runConf.getModelInitializationMethod();
 			
 			try {
 				Dsl environment = new WorkbenchDsl(dslFile);
@@ -171,4 +189,45 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 		return interpreter;
 	}
 	
+	public Optional<Method> getMainOp() {
+		if(mainOp != null) {
+			List<String> segments = Lists.newArrayList(mainOp.split("::"));
+			if(segments.size() >= 2) {
+				String opName = segments.get(segments.size() - 1);
+				String typeName = segments.get(segments.size() - 2);
+				
+				return
+					getModelUnits()
+					.stream()
+					.flatMap(unit -> unit.getClassExtensions().stream())
+					.filter(xtdCls -> xtdCls.getBaseClass().getName().equals(typeName))
+					.flatMap(cls -> cls.getMethods().stream())
+					.filter(op -> op.getTags().contains("main"))
+					.filter(op -> op.getOperationRef().getName().equals(opName))
+					.findFirst();
+			}
+		}
+		return Optional.empty();
+	}
+	
+	public Optional<Method> getInitOp() {
+		if(initOp != null) {
+			List<String> segments = Lists.newArrayList(initOp.split("::"));
+			if(segments.size() >= 2) {
+				String opName = segments.get(segments.size() - 1);
+				String typeName = segments.get(segments.size() - 2);
+				
+				return
+					getModelUnits()
+					.stream()
+					.flatMap(unit -> unit.getClassExtensions().stream())
+					.filter(xtdCls -> xtdCls.getBaseClass().getName().equals(typeName))
+					.flatMap(cls -> cls.getMethods().stream())
+					.filter(op -> op.getTags().contains("init"))
+					.filter(op -> op.getOperationRef().getName().equals(opName))
+					.findFirst();
+			}
+		}
+		return Optional.empty();
+	}
 }
