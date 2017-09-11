@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -33,9 +32,7 @@ import org.eclipse.gemoc.commons.eclipse.ui.dialogs.SelectAnyIFileDialog;
 import org.eclipse.gemoc.dsl.debug.ide.launch.AbstractDSLLaunchConfigurationDelegate;
 import org.eclipse.gemoc.dsl.debug.ide.sirius.ui.launch.AbstractDSLLaunchConfigurationDelegateUI;
 import org.eclipse.gemoc.execution.sequential.javaengine.ui.Activator;
-import org.eclipse.gemoc.execution.sequential.javaxdsml.api.extensions.languages.SequentialLanguageDefinitionExtension;
 import org.eclipse.gemoc.execution.sequential.javaxdsml.api.extensions.languages.SequentialLanguageDefinitionExtensionPoint;
-import org.eclipse.gemoc.executionframework.engine.commons.MelangeHelper;
 import org.eclipse.gemoc.executionframework.ui.utils.ENamedElementQualifiedNameLabelProvider;
 import org.eclipse.gemoc.xdsmlframework.ui.utils.dialogs.SelectAIRDIFileDialog;
 import org.eclipse.gemoc.xdsmlframework.ui.utils.dialogs.SelectAnyEObjectDialog;
@@ -64,9 +61,6 @@ import com.google.common.collect.Lists;
 import ale.gemoc.engine.ui.MethodLabelProvider;
 import ale.gemoc.engine.ui.RunConfiguration;
 import ale.gemoc.engine.ui.SelectMainMethodDialog;
-import fr.inria.diverse.melange.metamodel.melange.Element;
-import fr.inria.diverse.melange.metamodel.melange.Language;
-import fr.inria.diverse.melange.metamodel.melange.ModelTypingSpace;
 
 public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 
@@ -262,7 +256,7 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 	
 	public Composite createLanguageLayout(Composite parent, Font font) {
 		// Language
-		createTextLabelLayout(parent, "Melange languages");
+		createTextLabelLayout(parent, "ALE Languages");
 		_languageCombo = new Combo(parent, SWT.NONE);
 		_languageCombo.setLayoutData(createStandardLayout());
 
@@ -523,11 +517,10 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 	}
 	
 	private String getDslFilePath(String xdsmlName) {
-		List<String> languagesNames = new ArrayList<String>();
-		IConfigurationElement[] melangeLanguages = Platform
+		IConfigurationElement[] languages = Platform
 				.getExtensionRegistry().getConfigurationElementsFor(
 						SequentialLanguageDefinitionExtensionPoint.GEMOC_SEQUENTIAL_LANGUAGE_EXTENSION_POINT);
-		for (IConfigurationElement lang : melangeLanguages) {
+		for (IConfigurationElement lang : languages) {
 			String xdsmlPath = lang.getAttribute("xdsmlFilePath");
 			String langName = lang.getAttribute("name");
 			if(langName.equals(xdsmlName) && xdsmlPath.endsWith(".dsl")) {
@@ -542,10 +535,10 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 	 */
 	public List<String> getAllLanguages(){
 		List<String> languagesNames = new ArrayList<String>();
-		IConfigurationElement[] melangeLanguages = Platform
+		IConfigurationElement[] languages = Platform
 				.getExtensionRegistry().getConfigurationElementsFor(
 						SequentialLanguageDefinitionExtensionPoint.GEMOC_SEQUENTIAL_LANGUAGE_EXTENSION_POINT);
-		for (IConfigurationElement lang : melangeLanguages) {
+		for (IConfigurationElement lang : languages) {
 			String xdsmlPath = lang.getAttribute("xdsmlFilePath");
 			String xdsmlName = lang.getAttribute("name");
 			if(xdsmlPath.endsWith(".dsl")) {
