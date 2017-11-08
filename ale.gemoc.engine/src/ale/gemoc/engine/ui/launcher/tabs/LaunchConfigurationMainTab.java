@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -29,10 +30,13 @@ import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
 import org.eclipse.gemoc.commons.eclipse.emf.URIHelper;
 import org.eclipse.gemoc.commons.eclipse.ui.dialogs.SelectAnyIFileDialog;
+import org.eclipse.gemoc.dsl.SimpleValue;
 import org.eclipse.gemoc.dsl.debug.ide.launch.AbstractDSLLaunchConfigurationDelegate;
-import org.eclipse.gemoc.dsl.debug.ide.sirius.ui.launch.AbstractDSLLaunchConfigurationDelegateUI;
+import org.eclipse.gemoc.dsl.debug.ide.sirius.ui.launch.AbstractDSLLaunchConfigurationDelegateSiriusUI;
 import org.eclipse.gemoc.execution.sequential.javaengine.ui.Activator;
 import org.eclipse.gemoc.execution.sequential.javaxdsml.api.extensions.languages.SequentialLanguageDefinitionExtensionPoint;
+import org.eclipse.gemoc.executionframework.engine.commons.DslHelper;
+import org.eclipse.gemoc.executionframework.engine.ui.commons.RunConfiguration;
 import org.eclipse.gemoc.executionframework.ui.utils.ENamedElementQualifiedNameLabelProvider;
 import org.eclipse.gemoc.xdsmlframework.ui.utils.dialogs.SelectAIRDIFileDialog;
 import org.eclipse.gemoc.xdsmlframework.ui.utils.dialogs.SelectAnyEObjectDialog;
@@ -58,8 +62,8 @@ import org.eclipse.xtext.naming.QualifiedName;
 
 import com.google.common.collect.Lists;
 
+import ale.gemoc.engine.Helper;
 import ale.gemoc.engine.ui.MethodLabelProvider;
-import ale.gemoc.engine.ui.RunConfiguration;
 import ale.gemoc.engine.ui.SelectMainMethodDialog;
 
 public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
@@ -154,7 +158,7 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 				AbstractDSLLaunchConfigurationDelegate.RESOURCE_URI,
 				this._modelLocationText.getText());
 		configuration.setAttribute(
-				AbstractDSLLaunchConfigurationDelegateUI.SIRIUS_RESOURCE_URI,
+				AbstractDSLLaunchConfigurationDelegateSiriusUI.SIRIUS_RESOURCE_URI,
 				this._siriusRepresentationLocationText.getText());
 		configuration.setAttribute(RunConfiguration.LAUNCH_DELAY,
 				Integer.parseInt(_delayText.getText()));
@@ -172,8 +176,6 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 				_animationFirstBreak.getSelection());
 		// DebugModelID for sequential engine
 		configuration.setAttribute(RunConfiguration.DEBUG_MODEL_ID, Activator.DEBUG_MODEL_ID);
-		
-		configuration.setAttribute(RunConfiguration.ALE_DSL_FILE, getDslFilePath(_languageCombo.getText()));
 	}
 
 	@Override
@@ -344,10 +346,10 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 					setErrorMessage("Please select a language.");
 				}
 				else{
-						String dslFile = getDslFilePath(_languageCombo.getText());
+						org.eclipse.gemoc.dsl.Dsl language = DslHelper.load(_languageCombo.getText());
 						MethodLabelProvider labelProvider = new MethodLabelProvider();
 						SelectMainMethodDialog dialog = new SelectMainMethodDialog(
-								dslFile, null, labelProvider);
+								language, null, labelProvider);
 						int res = dialog.open();
 						if (res == WizardDialog.OK) {
 							Method selection = (Method) dialog.getFirstResult();
@@ -489,42 +491,25 @@ public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 			List<String> segments = Arrays.asList(_entryPointMethodText.getText().split("::"));
 			if(segments.size() >= 2) {
 				String tagetClassName = segments.get(segments.size() - 2);
-				try {
-					Dsl environment = new WorkbenchDsl(getDslFilePath(_languageCombo.getText()));
-					ALEInterpreter interpreter = new ALEInterpreter();
-					List<ParseResult<ModelUnit>> parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment())).parse(environment);
-					Optional<Method> initOperation =
-						parsedSemantics
-						.stream()
-						.filter(sem -> sem.getRoot() != null)
-						.map(sem -> sem.getRoot())
-						.flatMap(unit -> unit.getClassExtensions().stream())
-						.filter(xtdCls -> xtdCls.getBaseClass().getName().equals(tagetClassName))
-						.flatMap(xtdCls -> xtdCls.getMethods().stream())
-						.filter(op -> op.getTags().contains("init"))
-						.findFirst();
-					
-					if(initOperation.isPresent()){
-						return (new MethodLabelProvider()).getText(initOperation.get());
-					}
-					
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
+				org.eclipse.gemoc.dsl.Dsl language = DslHelper.load(_languageCombo.getText());
+				
+				Dsl environment = Helper.gemocDslToAleDsl(language);
+				ALEInterpreter interpreter = new ALEInterpreter();
+				List<ParseResult<ModelUnit>> parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment())).parse(environment);
+				Optional<Method> initOperation =
+					parsedSemantics
+					.stream()
+					.filter(sem -> sem.getRoot() != null)
+					.map(sem -> sem.getRoot())
+					.flatMap(unit -> unit.getClassExtensions().stream())
+					.filter(xtdCls -> xtdCls.getBaseClass().getName().equals(tagetClassName))
+					.flatMap(xtdCls -> xtdCls.getMethods().stream())
+					.filter(op -> op.getTags().contains("init"))
+					.findFirst();
+				
+				if(initOperation.isPresent()){
+					return (new MethodLabelProvider()).getText(initOperation.get());
 				}
-			}
-		}
-		return "";
-	}
-	
-	private String getDslFilePath(String xdsmlName) {
-		IConfigurationElement[] languages = Platform
-				.getExtensionRegistry().getConfigurationElementsFor(
-						SequentialLanguageDefinitionExtensionPoint.GEMOC_SEQUENTIAL_LANGUAGE_EXTENSION_POINT);
-		for (IConfigurationElement lang : languages) {
-			String xdsmlPath = lang.getAttribute("xdsmlFilePath");
-			String langName = lang.getAttribute("name");
-			if(langName.equals(xdsmlName) && xdsmlPath.endsWith(".dsl")) {
-				return xdsmlPath;
 			}
 		}
 		return "";

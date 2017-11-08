@@ -79,7 +79,7 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 
 	@Override
 	protected RunConfiguration parseLaunchConfiguration(ILaunchConfiguration configuration) throws CoreException {
-		return new ale.gemoc.engine.ui.RunConfiguration(configuration); //Convert to specialized RunConfiguration
+		return new RunConfiguration(configuration);
 	}
 
 	@Override

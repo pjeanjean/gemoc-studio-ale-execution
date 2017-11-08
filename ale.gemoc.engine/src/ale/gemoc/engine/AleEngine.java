@@ -3,11 +3,14 @@ package ale.gemoc.engine;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.acceleo.query.runtime.IService;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecoretools.ale.ALEInterpreter;
@@ -19,7 +22,10 @@ import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
 import org.eclipse.emf.ecoretools.ale.ide.WorkbenchDsl;
 import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
+import org.eclipse.gemoc.dsl.SimpleValue;
+import org.eclipse.gemoc.executionframework.engine.commons.DslHelper;
 import org.eclipse.gemoc.executionframework.engine.core.AbstractSequentialExecutionEngine;
+import org.eclipse.gemoc.executionframework.engine.ui.commons.RunConfiguration;
 import org.eclipse.gemoc.executionframework.extensions.sirius.services.IModelAnimator;
 import org.eclipse.gemoc.trace.commons.model.trace.Step;
 import org.eclipse.gemoc.trace.gemoc.api.IMultiDimensionalTraceAddon;
@@ -29,8 +35,6 @@ import org.eclipse.gemoc.xdsmlframework.api.engine_addon.IEngineAddon;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreterWithDiagnostic.IEvaluationResult;
 
 import com.google.common.collect.Lists;
-
-import ale.gemoc.engine.ui.RunConfiguration;
 
 public class AleEngine extends AbstractSequentialExecutionEngine {
 
@@ -106,15 +110,19 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 				public void update() {
 					for (IModelAnimator addon : animators) {
 						try {
-							Step<?> nextStep = (Step<?>) traceAddon.getTraceExplorer().getCurrentState().getStartedSteps().get(0);
-							addon.activate(caller,nextStep);
+							if(traceAddon != null) {
+								Step<?> nextStep = (Step<?>) traceAddon.getTraceExplorer().getCurrentState().getStartedSteps().get(0);
+								addon.activate(caller,nextStep);
+							}
 						} catch (Exception exception) {
 							// Update failed
 						}
 					}
 				}
 			};
-			traceAddon.getTraceExplorer().registerCommand(diagramUpdater, () -> diagramUpdater.update());
+			if(traceAddon != null) {
+				traceAddon.getTraceExplorer().registerCommand(diagramUpdater, () -> diagramUpdater.update());
+			}
 			
 			Method entryPoint = getMainOp().orElse(null);
 			if(interpreter.getCurrentEngine() != null) { //We ran @init method
@@ -124,7 +132,9 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 				IEvaluationResult res = interpreter.eval(caller, entryPoint, Arrays.asList(), parsedSemantics);
 			}
 			
-			traceAddon.getTraceExplorer().removeListener(diagramUpdater);
+			if(traceAddon != null) {
+				traceAddon.getTraceExplorer().removeListener(diagramUpdater);
+			}
 		}
 
 	}
@@ -154,7 +164,7 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 			caller = inputModel.getEObject(rootPath);
 			
 			// dslFile
-			String dslFile = runConf.getDslFile();
+			org.eclipse.gemoc.dsl.Dsl language = DslHelper.load(runConf.getLanguageName());
 
 			// arguments
 			args = Lists.newArrayList(runConf.getModelInitializationArguments().split("\n"));
@@ -162,14 +172,56 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 			mainOp = runConf.getExecutionEntryPoint();
 			initOp = runConf.getModelInitializationMethod();
 			
-			try {
-				Dsl environment = new WorkbenchDsl(dslFile);
-				interpreter = new ALEInterpreter();
-				parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment(),
-						caller.eResource().getResourceSet())).parse(environment);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+			Dsl environment = Helper.gemocDslToAleDsl(language);
+			interpreter = new ALEInterpreter();
+			parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment(),
+					caller.eResource().getResourceSet())).parse(environment);
+			
+			/*
+			 * Init interpreter
+			 */
+			Set<String> projects = new HashSet<String>();
+			Set<String> plugins = new HashSet<String>();
+
+			if(language.eResource().getURI().isPlatformPlugin()) {
+				URI dslUri = language.eResource().getURI();
+				String dslPlugin = dslUri.segmentsList().get(1);
+				plugins.add(dslPlugin);
+				
+				List<String> ecoreUris = 
+						language
+						.getAbstractSyntax()
+						.getValues()
+						.stream()
+						.filter(v -> v instanceof SimpleValue)
+						.map(v -> (SimpleValue) v)
+						.filter(v -> v.getName().equals("ecore"))
+						.flatMap(ecore -> ecore.getValues().stream())
+						.collect(Collectors.toList());
+				for(String ecoreURI : ecoreUris) {
+					URI uri = URI.createURI(ecoreURI);
+					String plugin = uri.segmentsList().get(1);
+					plugins.add(plugin);
+				}
+				
+				List<String> aleUris = 
+						language
+						.getSemantic()
+						.getValues()
+						.stream()
+						.filter(v -> v instanceof SimpleValue)
+						.map(v -> (SimpleValue) v)
+						.filter(v -> v.getName().equals("ale"))
+						.flatMap(ecore -> ecore.getValues().stream())
+						.collect(Collectors.toList());
+				for(String aleURI : aleUris) {
+					URI uri = URI.createURI(aleURI);
+					String plugin = uri.segmentsList().get(1);
+					plugins.add(plugin);
+				}
 			}
+			interpreter.javaExtensions.updateScope(plugins,projects);
+			interpreter.javaExtensions.reloadIfNeeded();
 		}
 	}
 	

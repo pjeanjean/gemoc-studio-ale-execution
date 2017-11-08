@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
@@ -31,7 +33,16 @@ public class MutableFieldExtractor implements IMutableFieldExtractor{
 	 Map<EClass, Integer> counters = new HashMap<>();
 
 	public MutableFieldExtractor(ALEInterpreter interpreter, List<ModelUnit> allModelUnits) {
-		this.baseToRuntime = RuntimeInstanceHelper.getBaseToRuntime(allModelUnits);
+		List<EClass> domain = 
+			interpreter
+			.getQueryEnvironment()
+			.getEPackageProvider()
+			.getEClassifiers()
+			.stream()
+			.filter(cls -> cls instanceof EClass)
+			.map(cls -> (EClass) cls)
+			.collect(Collectors.toList());
+		this.baseToRuntime = RuntimeInstanceHelper.getBaseToRuntime(allModelUnits,domain);
 		this.interpreter = interpreter;
 	}
 	
