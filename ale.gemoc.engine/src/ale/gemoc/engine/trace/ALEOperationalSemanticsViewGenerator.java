@@ -3,41 +3,45 @@ package ale.gemoc.engine.trace;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.acceleo.query.ast.Call;
 import org.eclipse.acceleo.query.ast.Expression;
-import org.eclipse.acceleo.query.parser.AstValidator;
-import org.eclipse.acceleo.query.runtime.impl.ValidationServices;
 import org.eclipse.acceleo.query.validation.type.EClassifierType;
 import org.eclipse.acceleo.query.validation.type.IType;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecoretools.ale.ALEInterpreter;
+import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
 import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
 import org.eclipse.emf.ecoretools.ale.core.validation.BaseValidator;
-import org.eclipse.emf.ecoretools.ale.ide.resource.AleResourceFactory;
 import org.eclipse.emf.ecoretools.ale.implementation.BehavioredClass;
 import org.eclipse.emf.ecoretools.ale.implementation.ExtendedClass;
 import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
 import org.eclipse.emf.ecoretools.ale.implementation.RuntimeClass;
+import org.eclipse.gemoc.dsl.Dsl;
+import org.eclipse.gemoc.dsl.SimpleValue;
 import org.eclipse.gemoc.opsemanticsview.gen.OperationalSemanticsViewGenerator;
 
 import com.google.common.collect.Lists;
 
-import fr.inria.diverse.melange.metamodel.melange.Language;
 import opsemanticsview.OperationalSemanticsView;
 import opsemanticsview.OpsemanticsviewFactory;
 import opsemanticsview.Rule;
@@ -47,59 +51,111 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 	Map<Method,Rule> methodToRule = new HashMap<>();
 	BaseValidator aleValidator;
 	List<Method> allMethods;
+	
+	Map<Method, Set<Method>> callGraph = new HashMap<>();
 
 	@Override
-	public boolean canHandle(Language language, IProject melangeProject) {
-		return language.getAle() != null && !language.getAle().isEmpty();
+	public boolean canHandle(Dsl language, IProject melangeProject) {
+		Optional<SimpleValue> semantic = language.getSemantic()
+				.getValues()
+				.stream()
+				.filter(v -> v instanceof SimpleValue)
+				.map(v -> (SimpleValue) v )
+				.filter(v -> v.getName().equals("ale"))
+				.findFirst();
+		return semantic.isPresent() && !semantic.get().getValues().isEmpty();
 	}
 
 	@Override
-	public OperationalSemanticsView generate(Language language, IProject melangeProject) {
+	public OperationalSemanticsView generate(Dsl language, IProject melangeProject) {
 		
 		OperationalSemanticsView result = OpsemanticsviewFactory.eINSTANCE.createOperationalSemanticsView();
-		
-		ResourceSet rs = new ResourceSetImpl();
-		Resource executionMetamodelResource = rs.getResource(URI.createURI(language.getSyntax().getEcoreUri()), true);
-		EPackage executionMetamodel = 
-			executionMetamodelResource
-			.getContents()
+
+		List<String> ecoreUris = 
+			language
+			.getAbstractSyntax()
+			.getValues()
 			.stream()
-			.filter(o -> o instanceof EPackage)
-			.map(o -> (EPackage) o)
-			.findFirst()
-			.get();
-		result.setExecutionMetamodel(executionMetamodel);
-		result.setAbstractSyntax(null);
+			.filter(v -> v instanceof SimpleValue)
+			.map(v -> (SimpleValue) v)
+			.filter(v -> v.getName().equals("ecore"))
+			.flatMap(ecore -> ecore.getValues().stream())
+			.collect(Collectors.toList());
 		
-		List<ModelUnit> units = loadModelUnits(language.getAle(),rs);
-		allMethods = getAllMethod(units);
+		List<String> aleUris = 
+				language
+				.getSemantic()
+				.getValues()
+				.stream()
+				.filter(v -> v instanceof SimpleValue)
+				.map(v -> (SimpleValue) v)
+				.filter(v -> v.getName().equals("ale"))
+				.flatMap(ecore -> ecore.getValues().stream())
+				.collect(Collectors.toList());
 		
-		findDynamicParts(units, result);		
-		allMethods.forEach(mtd -> inspectForBigStep(mtd, result));
+		if(!ecoreUris.isEmpty()) {
+			ResourceSet rs = new ResourceSetImpl();
+			Resource executionMetamodelResource = rs.getResource(URI.createURI(ecoreUris.get(0)), true);
+			EPackage executionMetamodel = 
+					executionMetamodelResource
+					.getContents()
+					.stream()
+					.filter(o -> o instanceof EPackage)
+					.map(o -> (EPackage) o)
+					.findFirst()
+					.get();
+			result.setExecutionMetamodel(executionMetamodel);
+			result.setAbstractSyntax(null);
+			
+			List<ModelUnit> units = loadModelUnits(ecoreUris,aleUris,rs);
+			allMethods = getAllMethod(units);
+			
+			computeCallGraph();
+			System.out.println("Callgraph : \n\n");
+			callGraph.entrySet().forEach(entry -> {
+				Method m = entry.getKey();
+				Set<Method> s = entry.getValue();
+				List<String> called = 
+						s
+						.stream()
+						.map(n -> getContainingClass(n).getName() + "." + n.getOperationRef().getName())
+						.collect(Collectors.toList());
+				String.join(", ", called);
+				
+				System.out.println(getContainingClass(m).getName() + "." + m.getOperationRef()
+				.getName()+ " : \n" + called + "\n");
+				
+			});
+			
+			findDynamicParts(units, result);		
+			allMethods.forEach(mtd -> inspectForBigStep(mtd, result));
+		}
 		
 		return result;
 	}
 	
-	private List<ModelUnit> loadModelUnits(String dslFile, ResourceSet rs) {
+	private List<ModelUnit> loadModelUnits(List<String> syntaxes, List<String> semantics, ResourceSet rs) {
 		
 		ALEInterpreter interpreter = new ALEInterpreter();
-		rs.getResourceFactoryRegistry()
-			.getExtensionToFactoryMap()
-			.put("dsl", new AleResourceFactory(interpreter.getQueryEnvironment(),rs));
 		
+		List<ParseResult<ModelUnit>> parsedSemantics = new ArrayList<>();
+		org.eclipse.emf.ecoretools.ale.core.parser.Dsl environment = new org.eclipse.emf.ecoretools.ale.ide.WorkbenchDsl(syntaxes, semantics);
+		parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment(),rs)).parse(environment);
 		
-		Resource dslResource = rs.getResource(URI.createURI(dslFile),true);
 		List<ModelUnit> res = 
-			dslResource
-			.getContents()
+			parsedSemantics
 			.stream()
-			.filter(o -> o instanceof ModelUnit)
-			.map(o -> (ModelUnit) o)
+			.filter(elem -> elem.getRoot() != null)
+			.map(elem -> elem.getRoot())
 			.collect(Collectors.toList());
 		
 		aleValidator = new BaseValidator(interpreter.getQueryEnvironment(), Arrays.asList());
 		List<ParseResult<ModelUnit>> validationInput = new ArrayList<>();
+		Resource r = new ResourceImpl(); 
 		for(ModelUnit unit : res) {
+			if(unit.eResource() ==  null) {
+				r.getContents().add(unit);
+			}
 			ParseResult<ModelUnit> mockParseRes = new ParseResult<ModelUnit>();
 			mockParseRes.setRoot(unit);
 			validationInput.add(mockParseRes);
@@ -107,24 +163,6 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 		aleValidator.validate(validationInput);
 		
 		return res;
-//		List<ParseResult<ModelUnit>> parsedSemantics = null;
-//		try {
-//			Dsl environment = new WorkbenchDsl(dslFile);
-//			ALEInterpreter interpreter = new ALEInterpreter();
-//			parsedSemantics = (new DslBuilder(interpreter.getQueryEnvironment(),rs)).parse(environment);
-//		} catch (FileNotFoundException e) {
-//			e.printStackTrace();
-//		}
-//		
-//		if(parsedSemantics != null) {
-//			return 
-//				parsedSemantics
-//				.stream()
-//				.map(p -> p.getRoot())
-//				.filter(elem -> elem != null)
-//				.collect(Collectors.toList());
-//		}
-//		return Lists.newArrayList();
 	}
 	
 	private void findDynamicParts(List<ModelUnit> units, OperationalSemanticsView view) {
@@ -193,14 +231,19 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 		Rule rule = getRuleOfMethod(method, view);
 		
 		//Called methods
-		List<Method> calledMethods = findCalledMethods(method);
+		Set<Method> calledMethods = callGraph.get(method);
+		if(calledMethods == null) {
+			calledMethods = new HashSet<Method>();
+			callGraph.put(method, calledMethods);
+		}
+		
 		for (Method calledMethod : calledMethods) {
 			Rule calledRule = getRuleOfMethod(calledMethod, view);
 			rule.getCalledRules().add(calledRule);
 		}
 		
 		//Overrides
-		List<Method> overridedMethods = findOverridedMethods(method);
+		List<Method> overridedMethods = findOverridingMethods(method);
 		for (Method overridedMethod : overridedMethods) {
 			Rule overidedRule = getRuleOfMethod(overridedMethod, view);
 			overidedRule.getOverridenBy().add(rule); //TODO: double check :/
@@ -243,7 +286,7 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 		return calledMethods;
 	}
 
-	private List<Method> findOverridedMethods(Method method) {
+	private List<Method> findOverridingMethods(Method method) {
 		List<Method> overridedMethods = new ArrayList<>();
 		
 		for(Method mtd : allMethods) {
@@ -285,6 +328,30 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 		}
 		else {
 			return mtd.getOperationRef().getEContainingClass();
+		}
+	}
+	
+	private void computeCallGraph() {
+		for(Method mtd : allMethods) {
+			Set<Method> calledMethods = callGraph.get(mtd);
+			if(calledMethods == null) {
+				calledMethods = new HashSet<Method>();
+				callGraph.put(mtd, calledMethods);
+			}
+			calledMethods.addAll(findCalledMethods(mtd));
+			
+			List<Method> overridingMethods = findOverridingMethods(mtd);
+			for(Method overrdidedMtd : overridingMethods) {
+				calledMethods.addAll(findCalledMethods(overrdidedMtd));
+			}
+			
+			Set<Method> toAdd = new HashSet<Method>();
+			for(Method overrdidedMtd : calledMethods) {
+				List<Method> overridedCalls = findOverridingMethods(overrdidedMtd);
+				for(Method overridedCall : overridedCalls) {
+					toAdd.addAll(findCalledMethods(overridedCall));
+				}
+			}
 		}
 	}
 }
