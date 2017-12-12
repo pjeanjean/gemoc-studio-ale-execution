@@ -1,6 +1,5 @@
 package ale.gemoc.engine;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -19,10 +18,8 @@ import org.eclipse.emf.ecoretools.ale.core.interpreter.services.ServiceCallListe
 import org.eclipse.emf.ecoretools.ale.core.parser.Dsl;
 import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
 import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
-import org.eclipse.emf.ecoretools.ale.ide.WorkbenchDsl;
 import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
-import org.eclipse.gemoc.dsl.SimpleValue;
 import org.eclipse.gemoc.executionframework.engine.commons.DslHelper;
 import org.eclipse.gemoc.executionframework.engine.core.AbstractSequentialExecutionEngine;
 import org.eclipse.gemoc.executionframework.engine.ui.commons.RunConfiguration;
@@ -188,32 +185,14 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 				String dslPlugin = dslUri.segmentsList().get(1);
 				plugins.add(dslPlugin);
 				
-				List<String> ecoreUris = 
-						language
-						.getAbstractSyntax()
-						.getValues()
-						.stream()
-						.filter(v -> v instanceof SimpleValue)
-						.map(v -> (SimpleValue) v)
-						.filter(v -> v.getName().equals("ecore"))
-						.flatMap(ecore -> ecore.getValues().stream())
-						.collect(Collectors.toList());
+				List<String> ecoreUris = Helper.getEcoreUris(language);
 				for(String ecoreURI : ecoreUris) {
 					URI uri = URI.createURI(ecoreURI);
 					String plugin = uri.segmentsList().get(1);
 					plugins.add(plugin);
 				}
 				
-				List<String> aleUris = 
-						language
-						.getSemantic()
-						.getValues()
-						.stream()
-						.filter(v -> v instanceof SimpleValue)
-						.map(v -> (SimpleValue) v)
-						.filter(v -> v.getName().equals("ale"))
-						.flatMap(ecore -> ecore.getValues().stream())
-						.collect(Collectors.toList());
+				List<String> aleUris = Helper.getAleUris(language);
 				for(String aleURI : aleUris) {
 					URI uri = URI.createURI(aleURI);
 					String plugin = uri.segmentsList().get(1);

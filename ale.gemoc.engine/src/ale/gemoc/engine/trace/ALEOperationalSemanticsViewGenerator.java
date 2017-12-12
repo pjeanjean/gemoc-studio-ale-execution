@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -15,11 +14,9 @@ import org.eclipse.acceleo.query.ast.Expression;
 import org.eclipse.acceleo.query.validation.type.EClassifierType;
 import org.eclipse.acceleo.query.validation.type.IType;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -37,11 +34,11 @@ import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
 import org.eclipse.emf.ecoretools.ale.implementation.RuntimeClass;
 import org.eclipse.gemoc.dsl.Dsl;
-import org.eclipse.gemoc.dsl.SimpleValue;
 import org.eclipse.gemoc.opsemanticsview.gen.OperationalSemanticsViewGenerator;
 
 import com.google.common.collect.Lists;
 
+import ale.gemoc.engine.Helper;
 import opsemanticsview.OperationalSemanticsView;
 import opsemanticsview.OpsemanticsviewFactory;
 import opsemanticsview.Rule;
@@ -56,14 +53,7 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 
 	@Override
 	public boolean canHandle(Dsl language, IProject melangeProject) {
-		Optional<SimpleValue> semantic = language.getSemantic()
-				.getValues()
-				.stream()
-				.filter(v -> v instanceof SimpleValue)
-				.map(v -> (SimpleValue) v )
-				.filter(v -> v.getName().equals("ale"))
-				.findFirst();
-		return semantic.isPresent() && !semantic.get().getValues().isEmpty();
+		return !Helper.getAleUris(language).isEmpty();
 	}
 
 	@Override
@@ -71,27 +61,8 @@ public class ALEOperationalSemanticsViewGenerator implements OperationalSemantic
 		
 		OperationalSemanticsView result = OpsemanticsviewFactory.eINSTANCE.createOperationalSemanticsView();
 
-		List<String> ecoreUris = 
-			language
-			.getAbstractSyntax()
-			.getValues()
-			.stream()
-			.filter(v -> v instanceof SimpleValue)
-			.map(v -> (SimpleValue) v)
-			.filter(v -> v.getName().equals("ecore"))
-			.flatMap(ecore -> ecore.getValues().stream())
-			.collect(Collectors.toList());
-		
-		List<String> aleUris = 
-				language
-				.getSemantic()
-				.getValues()
-				.stream()
-				.filter(v -> v instanceof SimpleValue)
-				.map(v -> (SimpleValue) v)
-				.filter(v -> v.getName().equals("ale"))
-				.flatMap(ecore -> ecore.getValues().stream())
-				.collect(Collectors.toList());
+		List<String> ecoreUris = Helper.getEcoreUris(language);
+		List<String> aleUris = Helper.getAleUris(language);
 		
 		if(!ecoreUris.isEmpty()) {
 			ResourceSet rs = new ResourceSetImpl();
