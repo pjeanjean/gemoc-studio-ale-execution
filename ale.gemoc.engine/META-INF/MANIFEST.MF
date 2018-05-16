@@ -37,4 +37,5 @@ Require-Bundle: org.eclipse.gemoc.executionframework.engine,
  org.eclipse.gemoc.executionframework.extensions.sirius,
  org.eclipse.gemoc.opsemanticsview.gen,
  org.eclipse.gemoc.opsemanticsview.model,
- org.eclipse.emf.ecore
+ org.eclipse.emf.ecore,
+ org.eclipse.gemoc.trace.commons.model

@@ -16,8 +16,8 @@ import org.eclipse.gemoc.commons.eclipse.ui.ViewHelper;
 import org.eclipse.gemoc.dsl.debug.ide.IDSLDebugger;
 import org.eclipse.gemoc.dsl.debug.ide.event.DSLDebugEventDispatcher;
 import org.eclipse.gemoc.execution.sequential.javaengine.SequentialModelExecutionContext;
-import org.eclipse.gemoc.execution.sequential.javaengine.ui.debug.GenericSequentialModelDebugger;
-import org.eclipse.gemoc.execution.sequential.javaengine.ui.debug.OmniscientGenericSequentialModelDebugger;
+import org.eclipse.gemoc.executionframework.debugger.GenericSequentialModelDebugger;
+import org.eclipse.gemoc.executionframework.debugger.OmniscientGenericSequentialModelDebugger;
 import org.eclipse.gemoc.executionframework.debugger.AbstractGemocDebugger;
 import org.eclipse.gemoc.executionframework.debugger.AnnotationMutableFieldExtractor;
 import org.eclipse.gemoc.executionframework.engine.commons.EngineContextException;
@@ -27,7 +27,8 @@ import org.eclipse.gemoc.executionframework.engine.ui.launcher.AbstractSequentia
 import org.eclipse.gemoc.executionframework.extensions.sirius.debug.DebugSessionFactory;
 import org.eclipse.gemoc.executionframework.ui.views.engine.EnginesStatusView;
 import org.eclipse.gemoc.trace.commons.model.trace.MSEOccurrence;
-import org.eclipse.gemoc.trace.gemoc.api.IModelAccessor;
+import org.eclipse.gemoc.trace.commons.model.trace.Step;
+//import org.eclipse.gemoc.trace.gemoc.api.IModelAccessor;
 import org.eclipse.gemoc.trace.gemoc.api.IMultiDimensionalTraceAddon;
 import org.eclipse.gemoc.xdsmlframework.api.core.ExecutionMode;
 import org.eclipse.gemoc.xdsmlframework.api.core.IExecutionEngine;
@@ -106,20 +107,20 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 	protected IDSLDebugger getDebugger(ILaunchConfiguration configuration, DSLDebugEventDispatcher dispatcher,
 			EObject firstInstruction, IProgressMonitor monitor) {
 		
-		AleEngine engine = (AleEngine) _executionEngine;
+		AleEngine engine = (AleEngine) getExecutionEngine();
 		
-		Set<IMultiDimensionalTraceAddon> traceAddons = _executionEngine.getAddonsTypedBy(IMultiDimensionalTraceAddon.class);
+		Set<IMultiDimensionalTraceAddon> traceAddons = engine.getAddonsTypedBy(IMultiDimensionalTraceAddon.class);
 		for(IMultiDimensionalTraceAddon addon : traceAddons) {
-			if(addon instanceof IModelAccessor) {
-				((IModelAccessor)addon).setIMutableFieldExtractor(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits()));
-			}
+//			if(addon instanceof IModelAccessor) {
+//				((IModelAccessor)addon).setIMutableFieldExtractor(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits()));
+//			}
 		}
 		
 		AbstractGemocDebugger debugger;
 		if (traceAddons.isEmpty()) {
-			debugger = new GenericSequentialModelDebugger(dispatcher, _executionEngine);
+			debugger = new GenericSequentialModelDebugger(dispatcher, engine);
 		} else {
-			debugger = new OmniscientGenericSequentialModelDebugger(dispatcher, _executionEngine);
+			debugger = new OmniscientGenericSequentialModelDebugger(dispatcher, engine);
 		}
 		
 		debugger.setMutableFieldExtractors(Arrays.asList(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits())));
@@ -128,9 +129,9 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 		// we add this dummy break
 		try {
 			if (configuration.getAttribute(RunConfiguration.LAUNCH_BREAK_START, false)) {
-				debugger.addPredicateBreak(new BiPredicate<IExecutionEngine, MSEOccurrence>() {
+				debugger.addPredicateBreak(new BiPredicate<IExecutionEngine, Step<?>>() {
 					@Override
-					public boolean test(IExecutionEngine t, MSEOccurrence u) {
+					public boolean test(IExecutionEngine t, Step<?> u) {
 						return true;
 					}
 				});
@@ -139,7 +140,7 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 			Activator.error(e.getMessage(), e);
 		}
 
-		_executionEngine.getExecutionContext().getExecutionPlatform().addEngineAddon(debugger);
+		engine.getExecutionContext().getExecutionPlatform().addEngineAddon(debugger);
 		return debugger;
 	}
 
