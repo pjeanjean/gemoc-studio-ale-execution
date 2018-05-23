@@ -50,6 +50,10 @@ public class MutableFieldExtractor implements IMutableFieldExtractor{
 	public List<MutableField> extractMutableField(EObject eObject) {
 		
 		List<MutableField> result = new ArrayList<MutableField>();
+		if(eObject == null) {
+			return result;
+		}
+		
 		EClass runtimePart = baseToRuntime.get(eObject.eClass());
 		
 		/*
