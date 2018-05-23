@@ -1,9 +1,8 @@
-package ale.gemoc.engine.sirius;
+package org.eclipse.gemoc.ale.engine.sirius;
 
+import org.eclipse.gemoc.ale.engine.AleEngine;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreter;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreterProvider;
-
-import ale.gemoc.engine.AleEngine;
 
 public class ALEInterpreterProvider implements IInterpreterProvider {
 

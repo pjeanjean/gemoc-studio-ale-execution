@@ -1,8 +1,8 @@
 Bundle-Name: Engine
-Bundle-SymbolicName: ale.gemoc.engine;singleton:=true
+Bundle-SymbolicName: org.eclipse.gemoc.ale.engine;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Export-Package: ale.gemoc.engine
-Bundle-Activator: ale.gemoc.engine.ui.Activator
+Export-Package: org.eclipse.gemoc.ale.engine
+Bundle-Activator: org.eclipse.gemoc.ale.engine.ui.Activator
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.gemoc.executionframework.engine,
  org.eclipse.gemoc.commons.eclipse,

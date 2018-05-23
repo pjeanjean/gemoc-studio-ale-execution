@@ -1,4 +1,4 @@
-package ale.gemoc.engine.debug;
+package org.eclipse.gemoc.ale.engine.debug;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;

@@ -1,4 +1,4 @@
-package ale.gemoc.engine.ui.launcher.tabs;
+package org.eclipse.gemoc.ale.engine.ui.launcher.tabs;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,6 +25,9 @@ import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
 import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
 import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
+import org.eclipse.gemoc.ale.engine.Helper;
+import org.eclipse.gemoc.ale.engine.ui.MethodLabelProvider;
+import org.eclipse.gemoc.ale.engine.ui.SelectMainMethodDialog;
 import org.eclipse.gemoc.commons.eclipse.emf.URIHelper;
 import org.eclipse.gemoc.commons.eclipse.ui.dialogs.SelectAnyIFileDialog;
 import org.eclipse.gemoc.dsl.debug.ide.launch.AbstractDSLLaunchConfigurationDelegate;
@@ -57,10 +60,6 @@ import org.eclipse.xtext.naming.DefaultDeclarativeQualifiedNameProvider;
 import org.eclipse.xtext.naming.QualifiedName;
 
 import com.google.common.collect.Lists;
-
-import ale.gemoc.engine.Helper;
-import ale.gemoc.engine.ui.MethodLabelProvider;
-import ale.gemoc.engine.ui.SelectMainMethodDialog;
 
 public class LaunchConfigurationMainTab extends AbstractLaunchConfigurationTab {
 

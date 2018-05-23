@@ -1,4 +1,4 @@
-package ale.gemoc.engine;
+package org.eclipse.gemoc.ale.engine;
 
 import java.util.ArrayList;
 import java.util.List;

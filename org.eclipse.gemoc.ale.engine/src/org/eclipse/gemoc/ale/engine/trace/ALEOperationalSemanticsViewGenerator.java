@@ -1,4 +1,4 @@
-package ale.gemoc.engine.trace;
+package org.eclipse.gemoc.ale.engine.trace;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,12 +33,12 @@ import org.eclipse.emf.ecoretools.ale.implementation.ExtendedClass;
 import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
 import org.eclipse.emf.ecoretools.ale.implementation.RuntimeClass;
+import org.eclipse.gemoc.ale.engine.Helper;
 import org.eclipse.gemoc.dsl.Dsl;
 import org.eclipse.gemoc.opsemanticsview.gen.OperationalSemanticsViewGenerator;
 
 import com.google.common.collect.Lists;
 
-import ale.gemoc.engine.Helper;
 import opsemanticsview.OperationalSemanticsView;
 import opsemanticsview.OpsemanticsviewFactory;
 import opsemanticsview.Rule;

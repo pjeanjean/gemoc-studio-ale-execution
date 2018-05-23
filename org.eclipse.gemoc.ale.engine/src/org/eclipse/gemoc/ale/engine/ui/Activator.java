@@ -1,4 +1,4 @@
-package ale.gemoc.engine.ui;
+package org.eclipse.gemoc.ale.engine.ui;
 
 import org.eclipse.core.runtime.Status;
 import org.eclipse.gemoc.commons.eclipse.messagingsystem.api.MessagingSystem;
@@ -12,7 +12,7 @@ import org.osgi.framework.BundleContext;
 public class Activator extends AbstractUIPlugin {
 
 	// The plug-in ID
-	public static final String PLUGIN_ID = "ale.gemoc.engine"; //$NON-NLS-1$
+	public static final String PLUGIN_ID = "org.eclipse.gemoc.ale.engine"; //$NON-NLS-1$
 
 	// The shared instance
 	private static Activator plugin;

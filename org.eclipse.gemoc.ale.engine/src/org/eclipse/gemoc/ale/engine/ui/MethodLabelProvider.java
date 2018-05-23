@@ -1,4 +1,4 @@
-package ale.gemoc.engine.ui;
+package org.eclipse.gemoc.ale.engine.ui;
 
 import org.eclipse.emf.ecore.EOperation;
 import org.eclipse.emf.ecoretools.ale.implementation.BehavioredClass;

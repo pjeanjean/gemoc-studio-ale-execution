@@ -1,4 +1,4 @@
-package ale.gemoc.engine.ui.launcher;
+package org.eclipse.gemoc.ale.engine.ui.launcher;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -11,6 +11,10 @@ import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.gemoc.ale.engine.AleEngine;
+import org.eclipse.gemoc.ale.engine.debug.MutableFieldExtractor;
+import org.eclipse.gemoc.ale.engine.sirius.ALEInterpreterProvider;
+import org.eclipse.gemoc.ale.engine.ui.Activator;
 import org.eclipse.gemoc.commons.eclipse.messagingsystem.api.MessagingSystem;
 import org.eclipse.gemoc.commons.eclipse.ui.ViewHelper;
 import org.eclipse.gemoc.dsl.debug.ide.IDSLDebugger;
@@ -38,11 +42,6 @@ import org.eclipse.sirius.business.api.session.SessionManager;
 import org.eclipse.sirius.common.tools.api.interpreter.CompoundInterpreter;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreter;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreterProvider;
-
-import ale.gemoc.engine.AleEngine;
-import ale.gemoc.engine.debug.MutableFieldExtractor;
-import ale.gemoc.engine.sirius.ALEInterpreterProvider;
-import ale.gemoc.engine.ui.Activator;
 
 public class Launcher extends AbstractSequentialGemocLauncher {
 

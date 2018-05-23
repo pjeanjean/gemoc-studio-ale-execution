@@ -1,4 +1,4 @@
-package ale.gemoc.engine.ui;
+package org.eclipse.gemoc.ale.engine.ui;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,11 +11,10 @@ import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
 import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
 import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
+import org.eclipse.gemoc.ale.engine.Helper;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
-
-import ale.gemoc.engine.Helper;
 
 public class SelectMainMethodDialog extends ElementListSelectionDialog {
 

@@ -1,4 +1,4 @@
-package ale.gemoc.engine.sirius;
+package org.eclipse.gemoc.ale.engine.sirius;
 
 import java.util.List;
 import java.util.Map;
@@ -14,10 +14,9 @@ import org.eclipse.emf.common.util.BasicDiagnostic;
 import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecoretools.ale.ALEInterpreter;
+import org.eclipse.gemoc.ale.engine.AleEngine;
 import org.eclipse.sirius.common.acceleo.aql.business.internal.AQLSiriusInterpreter;
 import org.eclipse.sirius.common.tools.api.interpreter.EvaluationException;
-
-import ale.gemoc.engine.AleEngine;
 
 public class ALESiriusInterpreter extends AQLSiriusInterpreter {
 

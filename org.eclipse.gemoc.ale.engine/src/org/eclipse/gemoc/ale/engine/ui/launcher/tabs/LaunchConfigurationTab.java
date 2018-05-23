@@ -1,4 +1,4 @@
-package ale.gemoc.engine.ui.launcher.tabs;
+package org.eclipse.gemoc.ale.engine.ui.launcher.tabs;
 
 import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
 import org.eclipse.swt.SWT;
