@@ -30,6 +30,7 @@ import org.eclipse.gemoc.trace.commons.model.trace.MSEOccurrence;
 import org.eclipse.gemoc.trace.commons.model.trace.Step;
 //import org.eclipse.gemoc.trace.gemoc.api.IModelAccessor;
 import org.eclipse.gemoc.trace.gemoc.api.IMultiDimensionalTraceAddon;
+import org.eclipse.gemoc.trace.gemoc.traceaddon.GenericTraceEngineAddon;
 import org.eclipse.gemoc.xdsmlframework.api.core.ExecutionMode;
 import org.eclipse.gemoc.xdsmlframework.api.core.IExecutionEngine;
 import org.eclipse.sirius.business.api.session.Session;
@@ -109,11 +110,9 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 		
 		AleEngine engine = (AleEngine) getExecutionEngine();
 		
-		Set<IMultiDimensionalTraceAddon> traceAddons = engine.getAddonsTypedBy(IMultiDimensionalTraceAddon.class);
-		for(IMultiDimensionalTraceAddon addon : traceAddons) {
-//			if(addon instanceof IModelAccessor) {
-//				((IModelAccessor)addon).setIMutableFieldExtractor(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits()));
-//			}
+		Set<GenericTraceEngineAddon> traceAddons = engine.getAddonsTypedBy(GenericTraceEngineAddon.class);
+		for(GenericTraceEngineAddon addon : traceAddons) {
+			addon.setIMutableFieldExtractor(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits()));
 		}
 		
 		AbstractGemocDebugger debugger;
