@@ -14,25 +14,30 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecoretools.ale.ALEInterpreter;
 import org.eclipse.emf.ecoretools.ale.core.interpreter.DynamicFeatureRegistry;
 import org.eclipse.emf.ecoretools.ale.core.interpreter.RuntimeInstanceHelper;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
+import org.eclipse.emf.ecoretools.ale.implementation.RuntimeClass;
+import org.eclipse.gemoc.executionframework.debugger.IDynamicPartAccessor;
 import org.eclipse.gemoc.executionframework.debugger.IMutableFieldExtractor;
 import org.eclipse.gemoc.executionframework.debugger.MutableField;
 import org.eclipse.xtext.naming.DefaultDeclarativeQualifiedNameProvider;
 import org.eclipse.xtext.naming.QualifiedName;
 
-public class MutableFieldExtractor implements IMutableFieldExtractor{
+public class AleDynamicAccessor implements IDynamicPartAccessor{
 
 	Map<EClass, EClass> baseToRuntime;
 	
 	ALEInterpreter interpreter;
 	
-	 Map<EClass, Integer> counters = new HashMap<>();
+	Map<EClass, Integer> counters = new HashMap<>();
+	
+	List<RuntimeClass> dynamicClasses = null; //new ArrayList<>();
 
-	public MutableFieldExtractor(ALEInterpreter interpreter, List<ModelUnit> allModelUnits) {
+	public AleDynamicAccessor(ALEInterpreter interpreter, List<ModelUnit> allModelUnits) {
 		List<EClass> domain = 
 			interpreter
 			.getQueryEnvironment()
@@ -42,6 +47,13 @@ public class MutableFieldExtractor implements IMutableFieldExtractor{
 			.filter(cls -> cls instanceof EClass)
 			.map(cls -> (EClass) cls)
 			.collect(Collectors.toList());
+		
+		dynamicClasses = allModelUnits
+		.stream()
+		.flatMap(unit -> unit.getClassDefinitions().stream())
+		.collect(Collectors.toList());
+		
+		
 		this.baseToRuntime = RuntimeInstanceHelper.getBaseToRuntime(allModelUnits,domain);
 		this.interpreter = interpreter;
 	}
@@ -57,7 +69,7 @@ public class MutableFieldExtractor implements IMutableFieldExtractor{
 		EClass runtimePart = baseToRuntime.get(eObject.eClass());
 		
 		/*
-		 * Retrieve dynamic feature from ALE interpreter internal
+		 * Retrieve dynamic features defined in re-opened class from ALE interpreter internal
 		 */
 		if(runtimePart != null) {
 			for(EStructuralFeature feature : runtimePart.getEStructuralFeatures()) {
@@ -70,6 +82,31 @@ public class MutableFieldExtractor implements IMutableFieldExtractor{
 				Consumer<Object> setter = newValue -> {
 					DynamicFeatureRegistry registry = interpreter.getCurrentEngine().getEvalEnvironment().getFeatureAccess();
 					registry.setDynamicFeatureValue(eObject, feature.getName(), newValue);
+				};
+				
+				MutableField field = new MutableField(
+						feature.getName()+" ("+getName(eObject)+ " :"+eObject.eClass().getName() +")",
+						eObject,
+						feature,
+						getter,
+						setter
+						);
+				result.add(field);
+			}
+		}
+		
+		/*
+		 * Runtime features are directly accessible from eObject if its class is defined in .ale file 
+		 */
+		if(isDynamic(eObject)) {
+			for(EStructuralFeature feature : eObject.eClass().getEStructuralFeatures()) {
+				
+				Supplier<Object> getter = () -> {
+					return eObject.eGet(feature);
+				};
+				
+				Consumer<Object> setter = newValue -> {
+					eObject.eSet(feature, newValue);
 				};
 				
 				MutableField field = new MutableField(
@@ -116,5 +153,38 @@ public class MutableFieldExtractor implements IMutableFieldExtractor{
 			else 
 				return qname.toString();
 		}
+	}
+
+	@Override
+	public boolean isDynamic(EObject obj) {
+		
+		if(obj == null) {
+			return false;
+		}
+		
+		String qualifiedClsName = getQualifiedName(obj.eClass());
+		
+		return 
+			dynamicClasses
+			.stream()
+			.anyMatch(runtimeCls -> getQualifiedName(runtimeCls).equals(qualifiedClsName));
+	}
+	
+	private String getQualifiedName(EClass cls) {
+		
+		List<String> segments = new ArrayList<>();
+		segments.add(0,cls.getName());
+		
+		EPackage parent = cls.getEPackage();
+		while(parent != null) {
+			segments.add(0,parent.getName());
+			parent = parent.getESuperPackage();
+		}
+		
+		return String.join(".", segments);
+	}
+	
+	private String getQualifiedName(RuntimeClass cls) {
+		return ((ModelUnit) cls.eContainer()).getName() + "." + cls.getName();
 	}
 }

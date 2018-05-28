@@ -12,7 +12,7 @@ import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gemoc.ale.engine.AleEngine;
-import org.eclipse.gemoc.ale.engine.debug.MutableFieldExtractor;
+import org.eclipse.gemoc.ale.engine.debug.AleDynamicAccessor;
 import org.eclipse.gemoc.ale.engine.sirius.ALEInterpreterProvider;
 import org.eclipse.gemoc.ale.engine.ui.Activator;
 import org.eclipse.gemoc.commons.eclipse.messagingsystem.api.MessagingSystem;
@@ -111,7 +111,7 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 		
 		Set<GenericTraceEngineAddon> traceAddons = engine.getAddonsTypedBy(GenericTraceEngineAddon.class);
 		for(GenericTraceEngineAddon addon : traceAddons) {
-			addon.setIMutableFieldExtractor(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits()));
+			addon.setDynamicPartAccessor(new AleDynamicAccessor(engine.getInterpreter(),engine.getModelUnits()));
 		}
 		
 		AbstractGemocDebugger debugger;
@@ -121,7 +121,7 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 			debugger = new OmniscientGenericSequentialModelDebugger(dispatcher, engine);
 		}
 		
-		debugger.setMutableFieldExtractors(Arrays.asList(new MutableFieldExtractor(engine.getInterpreter(),engine.getModelUnits())));
+		debugger.setMutableFieldExtractors(Arrays.asList(new AleDynamicAccessor(engine.getInterpreter(),engine.getModelUnits())));
 		
 		// If in the launch configuration it is asked to pause at the start,
 		// we add this dummy break
