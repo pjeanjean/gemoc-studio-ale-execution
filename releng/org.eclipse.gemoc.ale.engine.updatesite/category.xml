@@ -6,5 +6,8 @@
    <feature url="features/org.eclipse.gemoc.ale.engine.feature.source_0.0.1.qualifier.jar" id="org.eclipse.gemoc.ale.engine.feature.source" version="0.0.1.qualifier">
       <category name="ALE Gemoc Engine"/>
    </feature>
+   <feature url="features/org.eclipse.gemoc.ale.language.sample.deployer_0.0.1.qualifier.jar" id="org.eclipse.gemoc.ale.language.sample.deployer.feature" version="0.0.1.qualifier">
+      <category name="ALE Gemoc Engine"/>
+   </feature>
    <category-def name="ALE Gemoc Engine" label="ALE Gemoc Engine"/>
 </site>
