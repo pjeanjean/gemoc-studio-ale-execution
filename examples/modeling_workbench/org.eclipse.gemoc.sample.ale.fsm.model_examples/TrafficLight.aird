@@ -186,7 +186,7 @@
     <description xmi:type="description_1:DiagramDescription" href="platform:/resource/org.eclipse.gemoc.sample.ale.fsm.design/description/fsm.odesign#//@ownedViewpoints[name='ALE_FSM_ViewPoint']/@ownedRepresentations[name='FSM']"/>
     <filterVariableHistory xmi:type="diagram:FilterVariableHistory" xmi:id="_DmQ2-ue-EeaCQbLzOZdGAg"/>
     <activatedLayers xmi:type="description_1:Layer" href="platform:/resource/org.eclipse.gemoc.sample.ale.fsm.design/description/fsm.odesign#//@ownedViewpoints[name='ALE_FSM_ViewPoint']/@ownedRepresentations[name='FSM']/@defaultLayer"/>
-    <activatedLayers xmi:type="description_1:AdditionalLayer" href="platform:/resource/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Debug']"/>
+    <activatedLayers xmi:type="description_1:AdditionalLayer" href="platform:/resource/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Debug']"/>
     <target xmi:type="fsm:StateMachine" href="TrafficLight.fsm#/"/>
   </diagram:DSemanticDiagram>
   <diagram:DSemanticDiagram xmi:id="__XYHwefVEeaYKp8RA1Pk2Q" name="TrafficLight">
@@ -382,31 +382,31 @@
       <arrangeConstraints>KEEP_SIZE</arrangeConstraints>
       <arrangeConstraints>KEEP_RATIO</arrangeConstraints>
       <ownedStyle xmi:type="diagram:FlatContainerStyle" xmi:id="_FReHoOfWEeaYKp8RA1Pk2Q" borderSize="1" borderSizeComputationExpression="1" backgroundStyle="GradientTopToBottom">
-        <description xmi:type="style:FlatContainerStyleDescription" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@style"/>
+        <description xmi:type="style:FlatContainerStyleDescription" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@style"/>
       </ownedStyle>
-      <actualMapping xmi:type="description_1:ContainerMapping" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Animation']/@containerMappings[name='']"/>
+      <actualMapping xmi:type="description_1:ContainerMapping" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Animation']/@containerMappings[name='']"/>
       <ownedElements xmi:type="diagram:DNodeListElement" xmi:id="_FRhK8OfWEeaYKp8RA1Pk2Q" name=" string to process: ">
         <target xmi:type="fsm:StateMachine" href="TrafficLight.fsm#/"/>
         <semanticElements xmi:type="fsm:StateMachine" href="TrafficLight.fsm#/"/>
         <ownedStyle xmi:type="diagram:BundledImage" xmi:id="_FRhyAOfWEeaYKp8RA1Pk2Q" showIcon="false" labelAlignment="LEFT" labelPosition="node">
-          <description xmi:type="style:BundledImageDescription" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@subNodeMappings[name='StringToProcess']/@style"/>
+          <description xmi:type="style:BundledImageDescription" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@subNodeMappings[name='StringToProcess']/@style"/>
         </ownedStyle>
-        <actualMapping xmi:type="description_1:NodeMapping" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@subNodeMappings[name='StringToProcess']"/>
+        <actualMapping xmi:type="description_1:NodeMapping" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@subNodeMappings[name='StringToProcess']"/>
       </ownedElements>
       <ownedElements xmi:type="diagram:DNodeListElement" xmi:id="_FRiZEOfWEeaYKp8RA1Pk2Q" name=" produced String: ">
         <target xmi:type="fsm:StateMachine" href="TrafficLight.fsm#/"/>
         <semanticElements xmi:type="fsm:StateMachine" href="TrafficLight.fsm#/"/>
         <ownedStyle xmi:type="diagram:BundledImage" xmi:id="_FRjAIOfWEeaYKp8RA1Pk2Q" showIcon="false" labelAlignment="LEFT" labelPosition="node">
-          <description xmi:type="style:BundledImageDescription" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@subNodeMappings[name='ProducedString']/@style"/>
+          <description xmi:type="style:BundledImageDescription" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@subNodeMappings[name='ProducedString']/@style"/>
         </ownedStyle>
-        <actualMapping xmi:type="description_1:NodeMapping" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@subNodeMappings[name='ProducedString']"/>
+        <actualMapping xmi:type="description_1:NodeMapping" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Animation']/@containerMappings[name='']/@subNodeMappings[name='ProducedString']"/>
       </ownedElements>
     </ownedDiagramElements>
     <description xmi:type="description_1:DiagramDescription" href="platform:/plugin/org.eclipse.gemoc.sample.ale.fsm.design/description/fsm.odesign#//@ownedViewpoints[name='ALE_FSM_ViewPoint']/@ownedRepresentations[name='FSM']"/>
     <filterVariableHistory xmi:type="diagram:FilterVariableHistory" xmi:id="__XYH1ufVEeaYKp8RA1Pk2Q"/>
     <activatedLayers xmi:type="description_1:Layer" href="platform:/plugin/org.eclipse.gemoc.sample.ale.fsm.design/description/fsm.odesign#//@ownedViewpoints[name='ALE_FSM_ViewPoint']/@ownedRepresentations[name='FSM']/@defaultLayer"/>
-    <activatedLayers xmi:type="description_1:AdditionalLayer" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Debug']"/>
-    <activatedLayers xmi:type="description_1:AdditionalLayer" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='LegacyFSM_XFSM']/@layers[name='Animation']"/>
+    <activatedLayers xmi:type="description_1:AdditionalLayer" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Debug']"/>
+    <activatedLayers xmi:type="description_1:AdditionalLayer" href="platform:/plugin/org.eclipse.gemoc.sample.ale.xsfsm.design/description/XSFSM.odesign#//@ownedViewpoints[name='ALE_XFSM_Viewpoint']/@ownedRepresentationExtensions[name='ALE_XFSM']/@layers[name='Animation']"/>
     <target xmi:type="fsm:StateMachine" href="TrafficLight.fsm#/"/>
   </diagram:DSemanticDiagram>
 </xmi:XMI>
