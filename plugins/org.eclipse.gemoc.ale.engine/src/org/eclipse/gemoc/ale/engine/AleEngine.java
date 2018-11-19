@@ -22,18 +22,18 @@ import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
 import org.eclipse.gemoc.executionframework.engine.commons.DslHelper;
 import org.eclipse.gemoc.executionframework.engine.core.AbstractSequentialExecutionEngine;
-import org.eclipse.gemoc.executionframework.engine.ui.commons.RunConfiguration;
+import org.eclipse.gemoc.execution.sequential.javaengine.K3RunConfiguration;
+import org.eclipse.gemoc.execution.sequential.javaengine.SequentialModelExecutionContext;
 import org.eclipse.gemoc.executionframework.extensions.sirius.services.IModelAnimator;
 import org.eclipse.gemoc.trace.commons.model.trace.Step;
 import org.eclipse.gemoc.trace.gemoc.api.IMultiDimensionalTraceAddon;
 import org.eclipse.gemoc.trace.gemoc.api.ITraceViewListener;
-import org.eclipse.gemoc.xdsmlframework.api.core.IExecutionContext;
 import org.eclipse.gemoc.xdsmlframework.api.engine_addon.IEngineAddon;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreterWithDiagnostic.IEvaluationResult;
 
 import com.google.common.collect.Lists;
 
-public class AleEngine extends AbstractSequentialExecutionEngine {
+public class AleEngine extends AbstractSequentialExecutionEngine<SequentialModelExecutionContext<K3RunConfiguration>, K3RunConfiguration> {
 
 	/**
 	 * Root of the model
@@ -146,14 +146,14 @@ public class AleEngine extends AbstractSequentialExecutionEngine {
 	}
 
 	@Override
-	protected void prepareEntryPoint(IExecutionContext executionContext) {
+	protected void prepareEntryPoint(SequentialModelExecutionContext<K3RunConfiguration> executionContext) {
 		
 	}
 
 	@Override
-	protected void prepareInitializeModel(IExecutionContext executionContext) {
-		if(executionContext.getRunConfiguration() instanceof RunConfiguration) {
-			RunConfiguration runConf = (RunConfiguration) executionContext.getRunConfiguration();
+	protected void prepareInitializeModel(SequentialModelExecutionContext<K3RunConfiguration> executionContext) {
+		if(executionContext.getRunConfiguration() instanceof K3RunConfiguration) {
+			K3RunConfiguration runConf = (K3RunConfiguration) executionContext.getRunConfiguration();
 			
 			// caller
 			Resource inputModel = executionContext.getResourceModel();

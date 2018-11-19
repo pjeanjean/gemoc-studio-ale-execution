@@ -25,8 +25,8 @@ import org.eclipse.gemoc.executionframework.debugger.OmniscientGenericSequential
 import org.eclipse.gemoc.executionframework.debugger.AbstractGemocDebugger;
 import org.eclipse.gemoc.executionframework.debugger.AnnotationMutableFieldExtractor;
 import org.eclipse.gemoc.executionframework.engine.commons.EngineContextException;
-import org.eclipse.gemoc.executionframework.engine.commons.ModelExecutionContext;
-import org.eclipse.gemoc.executionframework.engine.ui.commons.RunConfiguration;
+import org.eclipse.gemoc.executionframework.engine.commons.AbstractModelExecutionContext;
+import org.eclipse.gemoc.execution.sequential.javaengine.K3RunConfiguration;
 import org.eclipse.gemoc.executionframework.engine.ui.launcher.AbstractSequentialGemocLauncher;
 import org.eclipse.gemoc.executionframework.extensions.sirius.debug.DebugSessionFactory;
 import org.eclipse.gemoc.executionframework.ui.views.engine.EnginesStatusView;
@@ -43,12 +43,12 @@ import org.eclipse.sirius.common.tools.api.interpreter.CompoundInterpreter;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreter;
 import org.eclipse.sirius.common.tools.api.interpreter.IInterpreterProvider;
 
-public class Launcher extends AbstractSequentialGemocLauncher {
+public class Launcher extends AbstractSequentialGemocLauncher<SequentialModelExecutionContext<K3RunConfiguration>, K3RunConfiguration> {
 
 	public final static String TYPE_ID = Activator.PLUGIN_ID + ".launcher";
 	
 	@Override
-	protected IExecutionEngine createExecutionEngine(RunConfiguration runConfiguration, ExecutionMode executionMode)
+	protected AleEngine createExecutionEngine(K3RunConfiguration runConfiguration, ExecutionMode executionMode)
 			throws CoreException, EngineContextException {
 		
 		AleEngine engine = new AleEngine();
@@ -65,7 +65,7 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 		IInterpreterProvider provider = new ALEInterpreterProvider(engine);
 		CompoundInterpreter.INSTANCE.registerProvider(provider); //Register ALE for Sirius
 		
-		ModelExecutionContext executioncontext = new SequentialModelExecutionContext(runConfiguration, executionMode);
+		SequentialModelExecutionContext<K3RunConfiguration> executioncontext = new SequentialModelExecutionContext<K3RunConfiguration>(runConfiguration, executionMode);
 		executioncontext.initializeResourceModel(); // load model
 		engine.initialize(executioncontext);
 		
@@ -79,8 +79,8 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 	}
 
 	@Override
-	protected RunConfiguration parseLaunchConfiguration(ILaunchConfiguration configuration) throws CoreException {
-		return new RunConfiguration(configuration);
+	protected K3RunConfiguration parseLaunchConfiguration(ILaunchConfiguration configuration) throws CoreException {
+		return new K3RunConfiguration(configuration);
 	}
 
 	@Override
@@ -126,10 +126,10 @@ public class Launcher extends AbstractSequentialGemocLauncher {
 		// If in the launch configuration it is asked to pause at the start,
 		// we add this dummy break
 		try {
-			if (configuration.getAttribute(RunConfiguration.LAUNCH_BREAK_START, false)) {
-				debugger.addPredicateBreak(new BiPredicate<IExecutionEngine, Step<?>>() {
+			if (configuration.getAttribute(K3RunConfiguration.LAUNCH_BREAK_START, false)) {
+				debugger.addPredicateBreak(new BiPredicate<IExecutionEngine<?>, Step<?>>() {
 					@Override
-					public boolean test(IExecutionEngine t, Step<?> u) {
+					public boolean test(IExecutionEngine<?> t, Step<?> u) {
 						return true;
 					}
 				});
