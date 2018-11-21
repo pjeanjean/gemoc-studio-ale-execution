@@ -5,17 +5,17 @@
 	<modelVersion>4.0.0</modelVersion>
 
    <parent>
-       <groupId>org.eclipse.gemoc.ale.engine</groupId>
+       <groupId>org.eclipse.gemoc.ale.interpreted.engine</groupId>
        <artifactId>root</artifactId>
        <version>0.0.1-SNAPSHOT</version>
    </parent>
 
-	<artifactId>org.eclipse.gemoc.ale.engine.releng</artifactId>
+	<artifactId>org.eclipse.gemoc.ale.interpreted.engine.releng</artifactId>
 	<packaging>pom</packaging>
 
 	<modules>
-      <module>org.eclipse.gemoc.ale.engine.feature</module>
-	  <module>org.eclipse.gemoc.ale.engine.updatesite</module>
+      <module>org.eclipse.gemoc.ale.interpreted.engine.feature</module>
+	  <module>org.eclipse.gemoc.ale.interpreted.engine.updatesite</module>
 	</modules>
 
 	<build>

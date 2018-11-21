@@ -5,16 +5,16 @@
 	<modelVersion>4.0.0</modelVersion>
 
    <parent>
-       <groupId>org.eclipse.gemoc.ale.engine</groupId>
+       <groupId>org.eclipse.gemoc.ale.interpreted.engine</groupId>
        <artifactId>root</artifactId>
        <version>0.0.1-SNAPSHOT</version>
    </parent>
 
-	<artifactId>org.eclipse.gemoc.ale.engine.plugins</artifactId>
+	<artifactId>org.eclipse.gemoc.ale.interpreted.engine.plugins</artifactId>
 	<packaging>pom</packaging>
 
 	<modules>
-		<module>org.eclipse.gemoc.ale.engine</module>
+		<module>org.eclipse.gemoc.ale.interpreted.engine</module>
 		<module>org.eclipse.gemoc.ale.language.sample.deployer</module>
 	</modules>
 

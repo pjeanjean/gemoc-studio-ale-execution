@@ -12,8 +12,8 @@
 
 	<parent>
 		<relativePath>../</relativePath>
-		<groupId>org.eclipse.gemoc.ale.engine</groupId>
-		<artifactId>org.eclipse.gemoc.ale.engine.plugins</artifactId>
+		<groupId>org.eclipse.gemoc.ale.interpreted.engine</groupId>
+		<artifactId>org.eclipse.gemoc.ale.interpreted.engine.plugins</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
