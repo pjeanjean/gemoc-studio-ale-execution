@@ -12,6 +12,13 @@
          version="0.0.0"
          unpack="false"/>
 
+   <plugin
+         id="org.eclipse.gemoc.ale.interpreted.engine.ui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
     <plugin
       id="org.eclipse.gemoc.ale.language.sample.deployer"
       download-size="0"
