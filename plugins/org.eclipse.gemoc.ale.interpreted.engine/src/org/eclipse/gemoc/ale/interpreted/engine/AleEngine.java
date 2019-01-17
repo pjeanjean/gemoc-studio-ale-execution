@@ -5,10 +5,16 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.acceleo.query.runtime.IService;
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -20,11 +26,16 @@ import org.eclipse.emf.ecoretools.ale.core.parser.DslBuilder;
 import org.eclipse.emf.ecoretools.ale.core.parser.visitor.ParseResult;
 import org.eclipse.emf.ecoretools.ale.implementation.Method;
 import org.eclipse.emf.ecoretools.ale.implementation.ModelUnit;
-import org.eclipse.gemoc.executionframework.engine.commons.DslHelper;
-import org.eclipse.gemoc.executionframework.engine.core.AbstractSequentialExecutionEngine;
+import org.eclipse.emf.transaction.RecordingCommand;
+import org.eclipse.emf.transaction.TransactionalEditingDomain;
+import org.eclipse.emf.transaction.util.TransactionUtil;
 import org.eclipse.gemoc.execution.sequential.javaengine.K3RunConfiguration;
 import org.eclipse.gemoc.execution.sequential.javaengine.SequentialModelExecutionContext;
+import org.eclipse.gemoc.executionframework.engine.commons.DslHelper;
+import org.eclipse.gemoc.executionframework.engine.core.AbstractSequentialExecutionEngine;
 import org.eclipse.gemoc.executionframework.extensions.sirius.services.IModelAnimator;
+import org.eclipse.gemoc.trace.commons.model.generictrace.GenericDimension;
+import org.eclipse.gemoc.trace.commons.model.generictrace.GenericTracedObject;
 import org.eclipse.gemoc.trace.commons.model.trace.Step;
 import org.eclipse.gemoc.trace.gemoc.api.IMultiDimensionalTraceAddon;
 import org.eclipse.gemoc.trace.gemoc.api.ITraceViewListener;
@@ -53,6 +64,8 @@ public class AleEngine extends AbstractSequentialExecutionEngine<SequentialModel
 
 	private String initOp;
 	
+	private SequentialModelExecutionContext<K3RunConfiguration> executionContext;
+	
 	@Override
 	public String engineKindName() {
 		return "ALE Engine";
@@ -60,6 +73,48 @@ public class AleEngine extends AbstractSequentialExecutionEngine<SequentialModel
 
 	@Override
 	protected void executeEntryPoint() {
+		K3RunConfiguration runConf = (K3RunConfiguration) executionContext.getRunConfiguration();
+		IResourceChangeListener modelChange = new IResourceChangeListener() {
+			@Override
+			public void resourceChanged(IResourceChangeEvent event) {
+				if (event.getDelta().findMember(new Path(runConf.getExecutedModelURI().toPlatformString(true))) != null) {
+					if (executionContext.getRunConfiguration() instanceof K3RunConfiguration) {
+						executionContext.initializeResourceModel();
+						K3RunConfiguration runConf = (K3RunConfiguration) executionContext.getRunConfiguration();
+							
+						String rootPath = runConf.getModelEntryPoint();
+						EObject newModel = executionContext.getResourceModel().getEObject(rootPath);
+						Object instruction = newModel.eGet(newModel.eClass().getEStructuralFeature("instruction"));
+						
+						TransactionalEditingDomain domain = TransactionUtil.getEditingDomain(caller.eResource().getResourceSet());
+						Command cmd = new RecordingCommand(domain) {
+							@Override
+							protected void doExecute() {
+								try {
+								    caller.eSet(caller.eClass().getEStructuralFeature("instruction"), instruction);
+								} catch (Exception e) {
+									//e.printStackTrace();
+								}
+							}
+						};
+						domain.getCommandStack().execute(cmd);
+					}
+					executeEntryPoint2();
+				}
+			}
+		};
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(modelChange, IResourceChangeEvent.POST_CHANGE);
+
+		while (true) {
+			Scanner sc = new Scanner(System.in);
+			String read = sc.nextLine();
+			if (read.equals("q"))
+			    break;
+		}
+		ResourcesPlugin.getWorkspace().removeResourceChangeListener(modelChange);
+	}
+	
+	protected void executeEntryPoint2() {
 		if(interpreter != null && parsedSemantics != null) {
 			interpreter.addListener(new ServiceCallListener() {
 				
@@ -132,8 +187,20 @@ public class AleEngine extends AbstractSequentialExecutionEngine<SequentialModel
 			if(traceAddon != null) {
 				traceAddon.getTraceExplorer().removeListener(diagramUpdater);
 			}
+		
+			if (traceAddon != null) {
+				for (Object obj : traceAddon.getTrace().getTracedObjects()) {
+					if (obj instanceof GenericTracedObject) {
+						GenericTracedObject traced = (GenericTracedObject) obj;
+						
+						for (Object obj2 : traced.getAllDimensions()) {
+							GenericDimension dimension = (GenericDimension) obj2;
+							System.out.println(dimension.getValues());
+						}
+					}
+				}
+			}
 		}
-
 	}
 
 	@Override
@@ -152,6 +219,7 @@ public class AleEngine extends AbstractSequentialExecutionEngine<SequentialModel
 
 	@Override
 	protected void prepareInitializeModel(SequentialModelExecutionContext<K3RunConfiguration> executionContext) {
+		this.executionContext = executionContext;
 		if(executionContext.getRunConfiguration() instanceof K3RunConfiguration) {
 			K3RunConfiguration runConf = (K3RunConfiguration) executionContext.getRunConfiguration();
 			
